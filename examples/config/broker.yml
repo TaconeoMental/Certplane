@@ -1,0 +1,52 @@
+server:
+  address: "0.0.0.0:8443"
+  tls:
+    cert: /etc/certplane/broker/server.crt
+    key: /etc/certplane/broker/server.key
+    # CA que el broker usa para validar los certificados que los agentes envían
+    # en el handshake mTLS.
+    client_ca: /etc/certplane/pki/internal-root.crt
+    # Versión mínima de TLS aceptada.
+    min_version: "1.2"
+
+policy:
+  path: /etc/certplane/policy.yaml
+  # Si true, el broker recarga la policy en caliente.
+  watch: true
+
+identity_ca:
+  provider: step-ca
+  step_ca:
+    url: https://ca.int.whisper.cl:9000
+    fingerprint: "1234567890abcdef"
+    # Certificado raíz de step-ca para validar su servidor.
+    root_ca: /etc/certplane/pki/internal-root.crt
+    # Timeout para llamadas al API de step-ca.
+    timeout: 10s
+
+public_ca:
+  provider: letsencrypt
+  letsencrypt:
+    email: infra@whisper.cl
+    directory: production
+    dns:
+      provider: cloudflare
+      credentials_file: /etc/certplane/secrets/cloudflare-token
+      # Tiempo que espera el broker antes de pedir la validación de
+      # lestencrytp.
+      propagation_timeout: 120s
+      polling_interval: 10s
+    # Directorio donde lego guarda los datos de la cuenta ACME y los certs
+    # emitidos.
+    data_dir: /var/lib/certplane/lego
+    # Cuánto tiempo antes del vencimiento el broker renueva un certificado si
+    # recibe una solicitud de un agente.
+    renew_before: 720h
+
+state:
+  # Base de datos sqlite del broker.
+  path: /var/lib/certplane/broker.db
+
+logging:
+  level: debug
+  file: "hola"

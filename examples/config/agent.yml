@@ -1,0 +1,42 @@
+identity:
+  ca_url: https://ca.internal.whisper.cl:9000
+  ca_fingerprint: "1234567890abcdef"
+  cert: /var/lib/certplane/agent/identity.crt
+  key: /var/lib/certplane/agent/identity.key
+  renew_before: 8h
+
+broker:
+  url: https://broker.int.whisper.cl:8443
+  server_ca: /etc/certplane/pki/internal-root.crt
+  timeout: 30s
+  retries: 3
+
+state_dir: /var/lib/certplane/agent
+
+certificates:
+  - profile: public_edge_main
+    key: /etc/certplane/certs/edge/service.key
+    cert: /etc/certplane/certs/edge/service.crt
+    chain: /etc/certplane/certs/edge/service.chain.crt
+    fullchain: /etc/certplane/certs/edge/service.fullchain.crt
+    reload_command: systemctl reload traefik
+    renew_before: 720h
+
+  - profile: public_qa
+    key: /etc/certplane/certs/qa/service.key
+    cert: /etc/certplane/certs/qa/service.crt
+    chain: /etc/certplane/certs/qa/service.chain.crt
+    fullchain: /etc/certplane/certs/qa/service.fullchain.crt
+    reload_command: systemctl reload traefik
+    renew_before: 720h
+
+  - profile: public_monitoring
+    key: /etc/certplane/certs/monitoring/service.key
+    cert: /etc/certplane/certs/monitoring/service.crt
+    chain: /etc/certplane/certs/monitoring/service.chain.crt
+    fullchain: /etc/certplane/certs/monitoring/service.fullchain.crt
+    reload_command: systemctl reload nginx
+    renew_before: 720h
+
+logging:
+  level: info
