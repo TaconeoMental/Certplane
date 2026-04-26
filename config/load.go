@@ -1,42 +1,42 @@
 package config
 
 import (
-    "fmt"
-    "os"
-    "errors"
+	"errors"
+	"fmt"
+	"os"
 
-    "gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3"
 )
 
 type ConfigFlag struct {
-    Path string
+	Path string
 }
 
 func (f *ConfigFlag) String() string {
-    return f.Path
+	return f.Path
 }
 
 func (f *ConfigFlag) Type() string {
-    return "string"
+	return "string"
 }
 
 func (f *ConfigFlag) Set(val string) error {
-    if _, err := os.Stat(val); errors.Is(err, os.ErrNotExist) {
-        return fmt.Errorf("Config file does not exist")
-    }
+	if _, err := os.Stat(val); errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("Config file does not exist")
+	}
 
-    data, err := os.ReadFile(val)
-    if err != nil {
-        return fmt.Errorf("Could not read config file")
-    }
+	data, err := os.ReadFile(val)
+	if err != nil {
+		return fmt.Errorf("Could not read config file")
+	}
 
-    var out any
-    err = yaml.Unmarshal(data, &out)
+	var out any
+	err = yaml.Unmarshal(data, &out)
 
-    if err != nil {
-        return fmt.Errorf("Not a valid YAML file")
-    }
+	if err != nil {
+		return fmt.Errorf("Not a valid YAML file")
+	}
 
-    f.Path = val
-    return nil
+	f.Path = val
+	return nil
 }

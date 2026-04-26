@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/spf13/cobra"
 	"github.com/TaconeoMental/certplane/config"
+	"github.com/spf13/cobra"
 )
 
 func main() {
