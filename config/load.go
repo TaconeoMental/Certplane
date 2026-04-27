@@ -40,3 +40,23 @@ func (f *ConfigFlag) Set(val string) error {
 	f.Path = val
 	return nil
 }
+
+func LoadBroker(path string) (*BrokerConfig, error) {
+	return load[BrokerConfig](path)
+}
+
+func LoadAgent(path string) (*AgentConfig, error) {
+	return load[AgentConfig](path)
+}
+
+func load[T any](path string) (*T, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading config file: %w", err)
+	}
+	var cfg T
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("parsing config file: %w", err)
+	}
+	return &cfg, nil
+}

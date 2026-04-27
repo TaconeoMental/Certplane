@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/TaconeoMental/certplane/config"
@@ -60,7 +61,11 @@ func newRunCmd(configPath *string) *cobra.Command {
 }
 
 func runEnroll(configPath string) error {
-	_ = configPath
+	cfg, err := config.LoadAgent(configPath)
+	if err != nil {
+		return fmt.Errorf("loading config: %w", err)
+	}
+	_ = cfg
 	return nil
 }
 
