@@ -3,6 +3,7 @@ identity:
   ca_fingerprint: "1234567890abcdef"
   cert: /var/lib/certplane/agent/identity.crt
   key: /var/lib/certplane/agent/identity.key
+  bootstrap_token: /etc/certplane/agent/bootstrap-token
   renew_before: 8h
 
 broker:

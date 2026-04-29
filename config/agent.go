@@ -15,6 +15,7 @@ type AgentIdentityConfig struct {
 	CAFingerprint string        `yaml:"ca_fingerprint"`
 	Cert          string        `yaml:"cert"`
 	Key           string        `yaml:"key"`
+	BoostrapToken string        `yaml:"bootstrap_token"`
 	RenewBefore   time.Duration `yaml:"renew_before"`
 }
 
