@@ -20,8 +20,8 @@ func newRootCmd() *cobra.Command {
 	var cfg config.ConfigFlag
 
 	root := &cobra.Command{
-		Use:          os.Args[0],
-		Short:        "Certplane certificate agent",
+		Use:           os.Args[0],
+		Short:         "Certplane certificate agent",
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		CompletionOptions: cobra.CompletionOptions{
@@ -34,7 +34,9 @@ func newRootCmd() *cobra.Command {
 	})
 
 	root.PersistentFlags().Var(&cfg, "config", "config file path")
-	root.MarkPersistentFlagRequired("config")
+	if err := root.MarkPersistentFlagRequired("config"); err != nil {
+		panic(err)
+	}
 
 	root.AddCommand(
 		newEnrollCmd(&cfg.Path),

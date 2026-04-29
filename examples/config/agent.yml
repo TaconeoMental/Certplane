@@ -1,4 +1,5 @@
 identity:
+  cn: "lvvl-edge01.h.int.whisper.cl"
   ca_url: https://ca.internal.whisper.cl:9000
   ca_fingerprint: "1234567890abcdef"
   cert: /var/lib/certplane/agent/identity.crt

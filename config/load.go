@@ -22,19 +22,19 @@ func (f *ConfigFlag) Type() string {
 
 func (f *ConfigFlag) Set(val string) error {
 	if _, err := os.Stat(val); errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("Config file does not exist")
+		return fmt.Errorf("config file does not exist")
 	}
 
 	data, err := os.ReadFile(val)
 	if err != nil {
-		return fmt.Errorf("Could not read config file")
+		return fmt.Errorf("could not read config file")
 	}
 
 	var out any
 	err = yaml.Unmarshal(data, &out)
 
 	if err != nil {
-		return fmt.Errorf("Not a valid YAML file")
+		return fmt.Errorf("not a valid YAML file")
 	}
 
 	f.Path = val

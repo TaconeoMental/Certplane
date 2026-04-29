@@ -2,45 +2,37 @@ package agent
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/TaconeoMental/certplane/config"
 	"github.com/TaconeoMental/certplane/internal/fileutil"
+	"github.com/TaconeoMental/certplane/internal/pki"
 )
 
-func checkMustNotExist(path, label string) error {
-	exists, err := fileutil.FileExists(path)
-	if err != nil {
-		return fmt.Errorf("error verifying %s existence: %w", label, err)
-	}
-	if exists {
-		return fmt.Errorf("%s file already exists: %s", label, path)
-	}
-	return nil
-}
-
-func checkMustExist(path, label string) error {
-	exists, err := fileutil.FileExists(path)
-	if err != nil {
-		return fmt.Errorf("error verifying %s existence: %w", label, err)
-	}
-	if !exists {
-		return fmt.Errorf("%s does not exist: %s", label, path)
-	}
-	return nil
-}
-
 func Enroll(config *config.AgentConfig) error {
-	if err := checkMustNotExist(config.Identity.Cert, "certificate"); err != nil {
-		return err
+	if fileutil.FileExists(config.Identity.Cert) {
+		return fmt.Errorf("identity cert already exists")
 	}
-	if err := checkMustNotExist(config.Identity.Key, "key"); err != nil {
-		return err
+	if !fileutil.FileExists(config.Identity.BoostrapToken) {
+		return fmt.Errorf("%s does not exist", config.Identity.BoostrapToken)
 	}
-	if err := checkMustExist(config.Identity.BoostrapToken, "bootstrap token"); err != nil {
-		return err
+
+	tokenData, _ := os.ReadFile(config.Identity.BoostrapToken)
+	token := strings.TrimSpace(string(tokenData))
+	_ = token
+
+	keyPair, err := pki.NewECDSAKeyPair()
+	if err != nil {
+		return fmt.Errorf("generating keypair: %w", err)
 	}
-	// leer boostrap
-	// generar key local
-	// generar CSR
+
+	csrPEM, err := pki.GenerateCSR(keyPair.PrivateKey, config.Identity.CN)
+	if err != nil {
+		return fmt.Errorf("generating CSR: %w", err)
+	}
+
+	_ = csrPEM
 	// llamar a stepca con boostrap y CSR
 	// guardar crt
 	// borrar bootstrap

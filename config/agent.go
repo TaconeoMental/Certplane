@@ -11,6 +11,7 @@ type AgentConfig struct {
 }
 
 type AgentIdentityConfig struct {
+	CN            string        `yaml:"cn"`
 	CAURL         string        `yaml:"ca_url"`
 	CAFingerprint string        `yaml:"ca_fingerprint"`
 	Cert          string        `yaml:"cert"`
