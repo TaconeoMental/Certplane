@@ -8,7 +8,7 @@
   "properties": {
     "identity": {
       "type": "object",
-      "required": ["cn", "ca_url", "ca_fingerprint", "cert", "key"],
+      "required": ["cn", "ca_provider", "ca_url", "ca_fingerprint", "cert", "key"],
       "additionalProperties": false,
       "properties": {
         "cn": {
@@ -16,9 +16,14 @@
           "description": "Common Name for this host's identity certificate.",
           "examples": ["lvvl-edge01.h.int.whisper.cl"]
         },
+        "ca_provider": {
+          "type": "string",
+          "enum": ["step-ca"],
+          "description": "CA provider."
+        },
         "ca_url": {
           "type": "string",
-          "description": "URL of the step-ca API used to enroll and renew this agent's identity certificate."
+          "description": "URL of the CA API used to enroll and renew this agent's identity certificate."
         },
         "ca_fingerprint": {
           "type": "string",

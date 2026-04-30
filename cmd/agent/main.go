@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -39,34 +40,34 @@ func newRootCmd() *cobra.Command {
 	}
 
 	root.AddCommand(
-		newEnrollCmd(&cfg.Path),
-		newRunCmd(&cfg.Path),
+		newEnrollCmd(&cfg),
+		newRunCmd(&cfg),
 	)
 
 	return root
 }
 
-func newEnrollCmd(configPath *string) *cobra.Command {
+func newEnrollCmd(cfg *config.ConfigFlag) *cobra.Command {
 	return &cobra.Command{
 		Use:   "enroll",
 		Short: "Bootstrap agent identity against the CA",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runEnroll(*configPath)
+			return runEnroll(cmd.Context(), cfg.Path)
 		},
 	}
 }
 
-func newRunCmd(configPath *string) *cobra.Command {
+func newRunCmd(cfg *config.ConfigFlag) *cobra.Command {
 	return &cobra.Command{
 		Use:   "run",
 		Short: "Run the agent renewal loop",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRun(*configPath)
+			return runRun(cmd.Context(), cfg.Path)
 		},
 	}
 }
 
-func runEnroll(configPath string) error {
+func runEnroll(ctx context.Context, configPath string) error {
 	cfg, err := config.LoadAgent(configPath)
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
@@ -74,7 +75,7 @@ func runEnroll(configPath string) error {
 	return agent.Enroll(cfg)
 }
 
-func runRun(configPath string) error {
+func runRun(ctx context.Context, configPath string) error {
 	_ = configPath
 	return nil
 }

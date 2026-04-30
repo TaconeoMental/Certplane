@@ -26,8 +26,7 @@ func NewECDSAKeyPair() (*ECDSAKeyPair, error) {
 	}, nil
 }
 
-func GenerateCSR(privateKey *ecdsa.PrivateKey, commonName string) (string, error) {
-	// TODO: necesito mas info??
+func GenerateCSR(privateKey *ecdsa.PrivateKey, commonName string) ([]byte, error) {
 	csrTemplate := x509.CertificateRequest{
 		Subject: pkix.Name{
 			CommonName: commonName,
@@ -36,7 +35,7 @@ func GenerateCSR(privateKey *ecdsa.PrivateKey, commonName string) (string, error
 
 	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, &csrTemplate, privateKey)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	csrPEM := pem.EncodeToMemory(&pem.Block{
@@ -44,5 +43,5 @@ func GenerateCSR(privateKey *ecdsa.PrivateKey, commonName string) (string, error
 		Bytes: csrBytes,
 	})
 
-	return string(csrPEM), nil
+	return csrPEM, nil
 }
