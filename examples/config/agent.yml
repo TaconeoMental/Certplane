@@ -6,6 +6,7 @@ identity:
   key: /var/lib/certplane/agent/identity.key
   bootstrap_token: /etc/certplane/agent/bootstrap-token
   renew_before: 8h
+  warn_before: 24h
 
 broker:
   url: https://broker.int.whisper.cl:8443
@@ -41,4 +42,6 @@ certificates:
     renew_before: 720h
 
 logging:
-  level: info
+  level: debug
+  format: json
+  file: /var/lib/certplane/log.json

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://certplane.whisper.cl/schemas/policy.schema.json",
+  "title": "Certplane Policy",
+  "type": "object",
+  "required": ["hosts", "profiles"],
+  "additionalProperties": false,
+  "properties": {
+    "profiles": {
+      "type": "object",
+      "description": "Named certificate policies. Keys are profile names referenced by hosts and agents.",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["cert_type", "dns_names", "acme_challenge"],
+        "additionalProperties": false,
+        "properties": {
+          "cert_type": {
+            "type": "string",
+            "description": "wildcard issues a *.domain.com certificate. multi issues a certificate with explicit SANs.",
+            "enum": ["wildcard", "multi"]
+          },
+          "dns_names": {
+            "type": "array",
+            "description": "DNS names for this certificate.",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            },
+            "examples": [
+              ["*.whisper.cl"],
+              ["api.whisper.cl", "api-v2.whisper.cl"]
+            ]
+          },
+          "acme_challenge": {
+            "type": "string",
+            "description": "ACME challenge type for this profile.",
+            "enum": ["dns-01", "http-01"]
+          },
+          "ttl": {
+            "type": "string",
+            "description": "Requested certificate TTL. (If the broker is using Let's Encrypt as provider, this value is ignored).",
+            "default": "2160h"
+          },
+          "renew_before": {
+            "type": "string",
+            "description": "The broker renews a cached certificate when less than this time remains before expiry.",
+            "default": "720h"
+          }
+        }
+      }
+    },
+
+    "hosts": {
+      "type": "object",
+      "description": "Registered hosts. Keys are host identifiers used for human reference only.",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["identity", "profiles"],
+        "additionalProperties": false,
+        "properties": {
+          "identity": {
+            "type": "string",
+            "description": "The CN of this host's identity certificate as issued by step-ca.",
+            "examples": ["lvvl-edge01.h.int.whisper.cl"]
+          },
+          "profiles": {
+            "type": "array",
+            "description": "List of profiles this host is allowed to request. Any profile not listed here will be rejected by the broker regardless of what the agent sends.",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

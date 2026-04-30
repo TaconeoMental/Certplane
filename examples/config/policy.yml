@@ -1,5 +1,3 @@
-# Este archivo se debería generar con un template de ansible :)
-
 profiles:
   public_edge_main:
     cert_type: wildcard

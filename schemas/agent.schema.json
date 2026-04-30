@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://certplane.whisper.cl/schemas/agent.schema.json",
+  "title": "Certplane Agent Configuration",
+  "type": "object",
+  "required": ["identity", "broker", "certificates"],
+  "additionalProperties": false,
+  "properties": {
+    "identity": {
+      "type": "object",
+      "required": ["cn", "ca_url", "ca_fingerprint", "cert", "key"],
+      "additionalProperties": false,
+      "properties": {
+        "cn": {
+          "type": "string",
+          "description": "Common Name for this host's identity certificate.",
+          "examples": ["lvvl-edge01.h.int.whisper.cl"]
+        },
+        "ca_url": {
+          "type": "string",
+          "description": "URL of the step-ca API used to enroll and renew this agent's identity certificate."
+        },
+        "ca_fingerprint": {
+          "type": "string",
+          "description": "SHA256 fingerprint of the step-ca root CA."
+        },
+        "cert": {
+          "type": "string",
+          "description": "Path where the agent writes and reads its identity certificate (PEM)."
+        },
+        "key": {
+          "type": "string",
+          "description": "Path where the agent writes and reads its identity private key (PEM)."
+        },
+        "bootstrap_token": {
+          "type": "string",
+          "description": "Path to the bootstrap token file. Only required during initial enrollment."
+        },
+        "renew_before": {
+          "type": "string",
+          "description": "Renew the identity certificate when less than this time remains before expiry.",
+          "examples": ["8h"],
+          "default": "8h"
+        },
+        "warn_before": {
+          "type": "string",
+          "description": "Write a warning to stderr when less than this time remains before expiry. Should be greater than renew_before.",
+          "examples": ["12h"],
+          "default": "12h"
+        }
+      }
+    },
+
+    "broker": {
+      "type": "object",
+      "required": ["url", "server_ca"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "URL of the certplane-broker API.",
+          "examples": ["https://broker.internal.whisper.cl:8443"]
+        },
+        "server_ca": {
+          "type": "string",
+          "description": "Path to the internal root CA certificate (PEM)."
+        },
+        "timeout": {
+          "type": "string",
+          "description": "Timeout for broker API calls.",
+          "default": "30s"
+        },
+        "retries": {
+          "type": "integer",
+          "description": "Number of times to retry a failed broker request.",
+          "minimum": 0,
+          "default": 3
+        }
+      }
+    },
+
+    "state_dir": {
+      "type": "string",
+      "description": "Directory used as the base for agent state.",
+      "default": "/var/lib/certplane/agent"
+    },
+
+    "certificates": {
+      "type": "array",
+      "description": "List of service certificates this agent manages.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["profile", "key", "cert", "fullchain"],
+        "additionalProperties": false,
+        "properties": {
+          "profile": {
+            "type": "string",
+            "description": "Name of the profile to request. Must be listed under this host in policy.yaml."
+          },
+          "key": {
+            "type": "string",
+            "description": "Path where the agent writes the service private key (PEM)."
+          },
+          "cert": {
+            "type": "string",
+            "description": "Path where the agent writes the service certificate (PEM)."
+          },
+          "chain": {
+            "type": "string",
+            "description": "Path where the agent writes the intermediate chain (PEM)."
+          },
+          "fullchain": {
+            "type": "string",
+            "description": "Path where the agent writes the full chain certificate and intermediates (PEM)."
+          },
+          "reload_command": {
+            "type": "string",
+            "description": "Shell command executed after the certificate is installed or renewed.",
+            "examples": [
+              "systemctl reload traefik",
+              "systemctl reload nginx",
+              "systemctl reload vault"
+            ]
+          },
+          "renew_before": {
+            "type": "string",
+            "description": "Request a new certificate when less than this time remains before expiry.",
+            "examples": ["720h"],
+            "default": "720h"
+          }
+        }
+      }
+    },
+
+    "logging": {
+      "$ref": "#/$defs/logging"
+    }
+  },
+
+  "$defs": {
+    "logging": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["json", "text"],
+          "default": "json"
+        },
+        "file": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
