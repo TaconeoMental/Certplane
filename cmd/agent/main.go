@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -44,19 +43,4 @@ func newRootCmd() *cobra.Command {
 	)
 
 	return root
-}
-
-func newRunCmd(cfg *config.ConfigFlag) *cobra.Command {
-	return &cobra.Command{
-		Use:   "run",
-		Short: "Run the agent renewal loop",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRun(cmd.Context(), cfg.Path)
-		},
-	}
-}
-
-func runRun(ctx context.Context, configPath string) error {
-	_ = configPath
-	return nil
 }
