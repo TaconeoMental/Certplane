@@ -72,7 +72,12 @@ func runEnroll(ctx context.Context, configPath string) error {
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
-	return agent.Enroll(cfg)
+
+	identityCA, err := resolveIdentityCA(cfg)
+	if err != nil {
+		return fmt.Errorf("initializing identity CA: %w", err)
+	}
+	return agent.Enroll(ctx, cfg, identityCA)
 }
 
 func runRun(ctx context.Context, configPath string) error {

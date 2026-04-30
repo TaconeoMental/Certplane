@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/TaconeoMental/certplane/ca"
+	"github.com/TaconeoMental/certplane/internal/ca"
 )
 
 type Config struct {

@@ -1,6 +1,8 @@
 package config
 
-import "time"
+import (
+	"time"
+)
 
 type AgentConfig struct {
 	Identity     AgentIdentityConfig `yaml:"identity"`
@@ -11,13 +13,15 @@ type AgentConfig struct {
 }
 
 type AgentIdentityConfig struct {
-	CN            string        `yaml:"cn"`
-	CAURL         string        `yaml:"ca_url"`
-	CAFingerprint string        `yaml:"ca_fingerprint"`
-	Cert          string        `yaml:"cert"`
-	Key           string        `yaml:"key"`
-	BoostrapToken string        `yaml:"bootstrap_token"`
-	RenewBefore   time.Duration `yaml:"renew_before"`
+	CN             string        `yaml:"cn"`
+	CAProvider     string        `yaml:"ca_provider"`
+	CAURL          string        `yaml:"ca_url"`
+	CAFingerprint  string        `yaml:"ca_fingerprint"`
+	Cert           string        `yaml:"cert"`
+	Key            string        `yaml:"key"`
+	BootstrapToken string        `yaml:"bootstrap_token"`
+	RenewBefore    time.Duration `yaml:"renew_before"`
+	WarnBefore     time.Duration `yaml:"warn_before"`
 }
 
 type AgentBrokerConfig struct {
