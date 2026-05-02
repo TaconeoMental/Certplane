@@ -17,6 +17,16 @@ func RenewIdentityIfNeeded(ctx context.Context, cfg *config.AgentConfig, identit
 		return fmt.Errorf("reading identity cert: %w", err)
 	}
 
+	keyData, err := os.ReadFile(cfg.Identity.Cert)
+	if err != nil {
+		return fmt.Errorf("reading identity key: %w", err)
+	}
+
+	rootCAData, err := os.ReadFile(cfg.Broker.ServerCA)
+	if err != nil {
+		return fmt.Errorf("reading root CA: %w", err)
+	}
+
 	cert, err := pki.ParseCertificate(certData)
 	if err != nil {
 		return fmt.Errorf("parsing identity cert: %w", err)
@@ -35,7 +45,7 @@ func RenewIdentityIfNeeded(ctx context.Context, cfg *config.AgentConfig, identit
 			time.Until(cert.NotAfter).Round(time.Minute))
 	}
 
-	renewed, err := identityCA.Renew(ctx, certData)
+	renewed, err := identityCA.Renew(ctx, certData, keyData, rootCAData)
 	if err != nil {
 		return fmt.Errorf("renewing identity cert: %w", err)
 	}

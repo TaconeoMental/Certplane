@@ -26,3 +26,10 @@ func ExpiresWithin(cert *x509.Certificate, d time.Duration) bool {
 func IsExpired(cert *x509.Certificate) bool {
 	return time.Now().After(cert.NotAfter)
 }
+
+func EncodeCertPEM(cert *x509.Certificate) []byte {
+	return pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert.Raw,
+	})
+}
