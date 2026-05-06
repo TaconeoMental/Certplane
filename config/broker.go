@@ -7,6 +7,7 @@ type BrokerConfig struct {
 	Policy     BrokerPolicyConfig `yaml:"policy"`
 	IdentityCA IdentityCAConfig   `yaml:"identity_ca"`
 	PublicCA   PublicCAConfig     `yaml:"public_ca"`
+	Secrets    SecretsConfig      `yaml:"secrets"`
 	State      StateConfig        `yaml:"state"`
 	Logging    LoggingConfig      `yaml:"logging"`
 }
@@ -48,16 +49,36 @@ type PublicCAConfig struct {
 type LetsEncryptConfig struct {
 	Email       string        `yaml:"email"`
 	Directory   string        `yaml:"directory"`
+	Challenge   string        `yaml:"challenge"`
 	DNS         DNSConfig     `yaml:"dns"`
+	HTTP        HTTPConfig    `yaml:"http"`
 	DataDir     string        `yaml:"data_dir"`
 	RenewBefore time.Duration `yaml:"renew_before"`
 }
 
 type DNSConfig struct {
-	Provider           string        `yaml:"provider"`
-	CredentialsFile    string        `yaml:"credentials_file"`
-	PropagationTimeout time.Duration `yaml:"propagation_timeout"`
-	PollingInterval    time.Duration `yaml:"polling_interval"`
+	Provider           string            `yaml:"provider"`
+	PropagationTimeout time.Duration     `yaml:"propagation_timeout"`
+	PollingInterval    time.Duration     `yaml:"polling_interval"`
+	Credentials        CredentialsConfig `yaml:"credentials"`
+}
+
+type CredentialsConfig struct {
+	Name string `yaml:"name"`
+}
+
+type HTTPConfig struct {
+	Port int `yaml:"port"`
+}
+
+type SecretsConfig struct {
+	Provider string      `yaml:"provider"`
+	Vault    VaultConfig `yaml:"vault"`
+}
+
+type VaultConfig struct {
+	Address   string `yaml:"address"`
+	TokenFile string `yaml:"token_file"`
 }
 
 type StateConfig struct {
