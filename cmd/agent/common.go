@@ -5,6 +5,7 @@ import (
 
 	"github.com/TaconeoMental/certplane/config"
 	"github.com/TaconeoMental/certplane/internal/ca"
+	"github.com/TaconeoMental/certplane/internal/logging"
 	"github.com/TaconeoMental/certplane/internal/ca/providers/stepca"
 )
 
@@ -16,7 +17,7 @@ func loadAgentConfig(path string) (*config.AgentConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO: logging.SetDefault(logging.New(cfg.Logging))
+	logging.SetDefault(logging.New(cfg.Logging))
 	return cfg, nil
 }
 

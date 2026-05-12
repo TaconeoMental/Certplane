@@ -19,13 +19,6 @@ broker:
   server_ca_bundle: dev/broker-ca.crt
   timeout: 30s
 
-audit:
-  enabled: true
-  mode: both
-  spool_dir: /var/lib/certplane/events
-  flush_timeout: 10s
-  max_batch_size: 100
-
 logging:
   level: info
   format: text

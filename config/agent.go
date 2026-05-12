@@ -15,7 +15,6 @@ type AgentConfig struct {
 	Identity     AgentIdentityConfig `yaml:"identity"`
 	Broker       AgentBrokerConfig   `yaml:"broker"`
 	Certificates []CertConfig        `yaml:"certificates"`
-	Audit        AgentAuditConfig    `yaml:"audit"`
 	Logging      LoggingConfig       `yaml:"logging"`
 }
 
@@ -57,14 +56,6 @@ type CertConfig struct {
 	RenewBefore   time.Duration `yaml:"renew_before"`
 }
 
-type AgentAuditConfig struct {
-	Enabled      *bool         `yaml:"enabled"`
-	Mode         string        `yaml:"mode"` // off | stdout | broker | both
-	SpoolDir     string        `yaml:"spool_dir"`
-	FlushTimeout time.Duration `yaml:"flush_timeout"`
-	MaxBatchSize int           `yaml:"max_batch_size"`
-}
-
 func (c *AgentConfig) ApplyDefaults() {
 	if c.StateDir == "" {
 		c.StateDir = "/var/lib/certplane/agent"
@@ -92,26 +83,7 @@ func (c *AgentConfig) ApplyDefaults() {
 			c.Certificates[i].ReloadTimeout = 30 * time.Second
 		}
 	}
-	if c.Audit.Mode == "" {
-		c.Audit.Mode = "broker"
-	}
-	if c.Audit.SpoolDir == "" {
-		c.Audit.SpoolDir = filepath.Join(c.StateDir, "events")
-	}
-	if c.Audit.FlushTimeout == 0 {
-		c.Audit.FlushTimeout = 10 * time.Second
-	}
-	if c.Audit.MaxBatchSize == 0 {
-		c.Audit.MaxBatchSize = 100
-	}
 	c.Logging.ApplyDefaults("info", "text", "stderr")
-}
-
-func (c *AgentConfig) AuditEnabled() bool {
-	if c.Audit.Enabled == nil {
-		return c.Audit.Mode != "off"
-	}
-	return *c.Audit.Enabled && c.Audit.Mode != "off"
 }
 
 func (c *AgentConfig) Validate() error {
@@ -192,17 +164,6 @@ func (c *AgentConfig) Validate() error {
 		if cert.ReloadCommand != "" && cert.ReloadTimeout <= 0 {
 			errs = append(errs, fmt.Errorf("certificates[%s].reload_timeout must be positive", name))
 		}
-	}
-	switch c.Audit.Mode {
-	case "off", "stdout", "broker", "both":
-	default:
-		errs = append(errs, fmt.Errorf("audit.mode must be off, stdout, broker or both"))
-	}
-	if c.Audit.MaxBatchSize < 0 {
-		errs = append(errs, fmt.Errorf("audit.max_batch_size cannot be negative"))
-	}
-	if err := c.Logging.Validate(); err != nil {
-		errs = append(errs, err)
 	}
 	return errors.Join(errs...)
 }
