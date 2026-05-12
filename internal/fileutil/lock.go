@@ -40,4 +40,3 @@ func (l *Lock) Release() error {
 	}
 	return err
 }
-

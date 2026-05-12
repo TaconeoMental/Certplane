@@ -20,49 +20,49 @@ type AgentConfig struct {
 }
 
 type AgentIdentityConfig struct {
-	Name           string            `yaml:"name"`
-	Provider       string            `yaml:"provider"`
-	Cert           string            `yaml:"cert"`
-	Key            string            `yaml:"key"`
-	IssuerCABundle string            `yaml:"issuer_ca_bundle"`
-	BootstrapToken string            `yaml:"bootstrap_token"`
+	Name           string        `yaml:"name"`
+	Provider       string        `yaml:"provider"`
+	Cert           string        `yaml:"cert"`
+	Key            string        `yaml:"key"`
+	IssuerCABundle string        `yaml:"issuer_ca_bundle"`
+	BootstrapToken string        `yaml:"bootstrap_token"`
 	RenewBefore    time.Duration `yaml:"renew_before"`
 	WarnBefore     time.Duration `yaml:"warn_before"`
-	StepCA         StepCAConfig      `yaml:"step_ca"`
+	StepCA         StepCAConfig  `yaml:"step_ca"`
 }
 
 type StepCAConfig struct {
-	URL          string            `yaml:"url"`
-	Fingerprint  string            `yaml:"fingerprint"`
-	RootCABundle string            `yaml:"root_ca_bundle"`
+	URL          string        `yaml:"url"`
+	Fingerprint  string        `yaml:"fingerprint"`
+	RootCABundle string        `yaml:"root_ca_bundle"`
 	Timeout      time.Duration `yaml:"timeout"`
 }
 
 type AgentBrokerConfig struct {
-	URL            string            `yaml:"url"`
-	ServerCABundle string            `yaml:"server_ca_bundle"`
+	URL            string        `yaml:"url"`
+	ServerCABundle string        `yaml:"server_ca_bundle"`
 	Timeout        time.Duration `yaml:"timeout"`
 }
 
 type CertConfig struct {
-	Name          string            `yaml:"name"`
-	Profile       string            `yaml:"profile"`
-	DNSNames      []string          `yaml:"dns_names"`
-	Key           string            `yaml:"key"`
-	Cert          string            `yaml:"cert"`
-	Chain         string            `yaml:"chain"`
-	FullChain     string            `yaml:"fullchain"`
-	ReloadCommand string            `yaml:"reload_command"`
+	Name          string        `yaml:"name"`
+	Profile       string        `yaml:"profile"`
+	DNSNames      []string      `yaml:"dns_names"`
+	Key           string        `yaml:"key"`
+	Cert          string        `yaml:"cert"`
+	Chain         string        `yaml:"chain"`
+	FullChain     string        `yaml:"fullchain"`
+	ReloadCommand string        `yaml:"reload_command"`
 	ReloadTimeout time.Duration `yaml:"reload_timeout"`
 	RenewBefore   time.Duration `yaml:"renew_before"`
 }
 
 type AgentAuditConfig struct {
-	Enabled      *bool             `yaml:"enabled"`
-	Mode         string            `yaml:"mode"` // off | stdout | broker | both
-	SpoolDir     string            `yaml:"spool_dir"`
+	Enabled      *bool         `yaml:"enabled"`
+	Mode         string        `yaml:"mode"` // off | stdout | broker | both
+	SpoolDir     string        `yaml:"spool_dir"`
 	FlushTimeout time.Duration `yaml:"flush_timeout"`
-	MaxBatchSize int               `yaml:"max_batch_size"`
+	MaxBatchSize int           `yaml:"max_batch_size"`
 }
 
 func (c *AgentConfig) ApplyDefaults() {
@@ -72,7 +72,7 @@ func (c *AgentConfig) ApplyDefaults() {
 	if c.Identity.Provider == "" {
 		c.Identity.Provider = "step-ca"
 	}
-	if c.Identity.RenewBefore == 0{
+	if c.Identity.RenewBefore == 0 {
 		c.Identity.RenewBefore = 8 * time.Hour
 	}
 	if c.Identity.WarnBefore == 0 {
@@ -206,4 +206,3 @@ func (c *AgentConfig) Validate() error {
 	}
 	return errors.Join(errs...)
 }
-

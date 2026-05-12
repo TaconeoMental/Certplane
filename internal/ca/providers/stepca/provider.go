@@ -17,7 +17,7 @@ import (
 type Config struct {
 	URL         string
 	Fingerprint string
-	RootCAPath string
+	RootCAPath  string
 	Timeout     time.Duration
 }
 

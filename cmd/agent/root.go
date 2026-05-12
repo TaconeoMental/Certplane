@@ -6,11 +6,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 type cliState struct {
 	configPath string
 }
-
 
 func newRootCommand() *cobra.Command {
 	state := &cliState{}

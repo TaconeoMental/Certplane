@@ -36,13 +36,12 @@ func resolveIdentityCA(cfg *config.AgentConfig) (ca.IdentityCA, error) {
 	switch cfg.Identity.Provider {
 	case "step-ca":
 		return stepca.New(stepca.Config{
-			URL: cfg.Identity.StepCA.URL,
+			URL:         cfg.Identity.StepCA.URL,
 			Fingerprint: cfg.Identity.StepCA.Fingerprint,
-			RootCAPath: cfg.Identity.StepCA.RootCABundle,
-			Timeout: cfg.Identity.StepCA.Timeout,
+			RootCAPath:  cfg.Identity.StepCA.RootCABundle,
+			Timeout:     cfg.Identity.StepCA.Timeout,
 		})
 	default:
 		return nil, fmt.Errorf("unknown identity CA provider %q", cfg.Identity.Provider)
 	}
 }
-

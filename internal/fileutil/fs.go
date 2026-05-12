@@ -18,7 +18,6 @@ func FileExists(path string) (bool, error) {
 	return false, fmt.Errorf("stat %q: %w", path, err)
 }
 
-
 func WriteFile(path string, data []byte, mode os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return fmt.Errorf("creating directory: %w", err)

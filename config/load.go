@@ -47,4 +47,3 @@ func loadYAML[T any](path string) (*T, error) {
 	}
 	return &cfg, nil
 }
-

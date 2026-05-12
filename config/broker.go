@@ -19,13 +19,13 @@ type BrokerConfig struct {
 }
 
 type BrokerServerConfig struct {
-	Address           string            `yaml:"address"`
-	TLS               ServerTLSConfig   `yaml:"tls"`
-	MTLS              ServerMTLSConfig  `yaml:"mtls"`
-	ReadHeaderTimeout time.Duration `yaml:"read_header_timeout"`
-	ReadTimeout       time.Duration `yaml:"read_timeout"`
-	WriteTimeout      time.Duration `yaml:"write_timeout"`
-	IdleTimeout       time.Duration `yaml:"idle_timeout"`
+	Address           string           `yaml:"address"`
+	TLS               ServerTLSConfig  `yaml:"tls"`
+	MTLS              ServerMTLSConfig `yaml:"mtls"`
+	ReadHeaderTimeout time.Duration    `yaml:"read_header_timeout"`
+	ReadTimeout       time.Duration    `yaml:"read_timeout"`
+	WriteTimeout      time.Duration    `yaml:"write_timeout"`
+	IdleTimeout       time.Duration    `yaml:"idle_timeout"`
 }
 
 type ServerTLSConfig struct {
@@ -44,8 +44,8 @@ type BrokerPolicyConfig struct {
 }
 
 type IssuerConfig struct {
-	Provider string           `yaml:"provider"`
-	ACME     ACMEConfig       `yaml:"acme"`
+	Provider string     `yaml:"provider"`
+	ACME     ACMEConfig `yaml:"acme"`
 }
 
 type ACMEConfig struct {
@@ -62,14 +62,14 @@ type SecretsConfig struct {
 }
 
 type VaultConfig struct {
-	Address   string            `yaml:"address"`
-	Token     string            `yaml:"token"`
-	TokenFile string            `yaml:"token_file"`
-	MountPath string            `yaml:"mount_path"`
-	KVVersion int               `yaml:"kv_version"`
-	Key       string            `yaml:"key"`
+	Address   string        `yaml:"address"`
+	Token     string        `yaml:"token"`
+	TokenFile string        `yaml:"token_file"`
+	MountPath string        `yaml:"mount_path"`
+	KVVersion int           `yaml:"kv_version"`
+	Key       string        `yaml:"key"`
 	Timeout   time.Duration `yaml:"timeout"`
-	Namespace string            `yaml:"namespace"`
+	Namespace string        `yaml:"namespace"`
 }
 
 type StoreConfig struct {
@@ -229,4 +229,3 @@ func (c *BrokerConfig) Validate() error {
 	}
 	return errors.Join(errs...)
 }
-

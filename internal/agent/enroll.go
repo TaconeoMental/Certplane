@@ -39,4 +39,3 @@ func Enroll(ctx context.Context, cfg *config.AgentConfig, identityCA ca.Identity
 	// TODO...
 	return nil
 }
-

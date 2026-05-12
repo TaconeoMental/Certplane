@@ -42,4 +42,3 @@ func (c LoggingConfig) Validate() error {
 	}
 	return errors.Join(errs...)
 }
-

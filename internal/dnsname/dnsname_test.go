@@ -26,4 +26,3 @@ func TestWildcardValidation(t *testing.T) {
 		}
 	}
 }
-
