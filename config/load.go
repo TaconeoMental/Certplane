@@ -1,62 +1,50 @@
 package config
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
 )
 
-type ConfigFlag struct {
-	Path string
-}
-
-func (f *ConfigFlag) String() string {
-	return f.Path
-}
-
-func (f *ConfigFlag) Type() string {
-	return "string"
-}
-
-func (f *ConfigFlag) Set(val string) error {
-	if _, err := os.Stat(val); errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("config file does not exist")
-	}
-
-	data, err := os.ReadFile(val)
+func LoadAgent(path string) (*AgentConfig, error) {
+	cfg, err := loadYAML[AgentConfig](path)
 	if err != nil {
-		return fmt.Errorf("could not read config file")
+		return nil, err
 	}
-
-	var out any
-	err = yaml.Unmarshal(data, &out)
-
-	if err != nil {
-		return fmt.Errorf("not a valid YAML file")
+	cfg.ApplyDefaults()
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("validating agent config: %w", err)
 	}
-
-	f.Path = val
-	return nil
+	return cfg, nil
 }
 
 func LoadBroker(path string) (*BrokerConfig, error) {
-	return load[BrokerConfig](path)
+	cfg, err := loadYAML[BrokerConfig](path)
+	if err != nil {
+		return nil, err
+	}
+	cfg.ApplyDefaults()
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("validating broker config: %w", err)
+	}
+	return cfg, nil
 }
 
-func LoadAgent(path string) (*AgentConfig, error) {
-	return load[AgentConfig](path)
-}
-
-func load[T any](path string) (*T, error) {
+func loadYAML[T any](path string) (*T, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("reading config file: %w", err)
+		return nil, fmt.Errorf("reading YAML config %q: %w", path, err)
 	}
+
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	dec.KnownFields(true)
+
 	var cfg T
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("parsing config file: %w", err)
+	if err := dec.Decode(&cfg); err != nil {
+		return nil, fmt.Errorf("parsing YAML config %q: %w", path, err)
 	}
 	return &cfg, nil
 }
+

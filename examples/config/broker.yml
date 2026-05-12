@@ -1,48 +1,42 @@
 server:
-  address: "0.0.0.0:8443"
+  address: ":8443"
   tls:
-    cert: /etc/certplane/broker/server.crt
-    key: /etc/certplane/broker/server.key
-    client_ca: /etc/certplane/pki/internal-root.crt
+    cert: /etc/certplane/broker.crt
+    key: /etc/certplane/broker.key
     min_version: "1.2"
+  mtls:
+    agent_ca_bundle: /etc/certplane/agent-ca.crt
 
 policy:
-  path: /etc/certplane/policy.yaml
-  watch: true
+  path: /etc/certplane/policy.yml
+  watch: false
 
-identity_ca:
-  provider: step-ca
-  step_ca:
-    url: https://ca.int.whisper.cl:9000
-    fingerprint: "1234567890abcdef"
-    root_ca: /etc/certplane/pki/internal-root.crt
-    timeout: 10s
+store:
+  driver: sqlite
+  path: /var/lib/certplane/broker.db 
 
-public_ca:
-  provider: letsencrypt
-  letsencrypt:
-    email: infra@whisper.cl
-    directory: production
-    challenge: dns-01
-    dns:
-      provider: cloudflare
-      propagation_timeout: 120s
-      polling_interval: 10s
-      credentials:
-        name: /etc/certplane/secrets/cloudflare-token
-    data_dir: /var/lib/certplane/lego
-    renew_before: 720h
-
-secrets:
-  provider: vault
-  vault:
-    address: https://vault.int.whisper.cl:8200
-    token_file: /etc/certplane/secrets/vault-token
-
-state:
-  path: /var/lib/certplane/broker.db
+audit:
+  enabled: true
+  failure_mode: fail_open
+  mirror_to_log: true
 
 logging:
-  level: debug
+  level: info
   format: json
-  file: /var/lib/certplane/logs.json
+  destination: stdout
+
+issuer:
+  provider: acme
+  acme:
+    directory_url: https://acme-staging-v02.api.letsencrypt.org/directory
+    account_email: admin@whisper.cl
+    account_key: /etc/certplane/acme/account.key
+    dns_provider: cloudflare
+
+secrets:
+  provider: env
+
+rate_limits:
+  per_identity_per_hour: 50
+  per_identity_profile_per_hour: 20
+

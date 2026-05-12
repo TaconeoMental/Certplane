@@ -1,27 +1,41 @@
 package config
 
-import "time"
+import (
+	"errors"
+	"fmt"
+	"net/url"
+	"time"
+)
 
 type BrokerConfig struct {
 	Server     BrokerServerConfig `yaml:"server"`
 	Policy     BrokerPolicyConfig `yaml:"policy"`
-	IdentityCA IdentityCAConfig   `yaml:"identity_ca"`
-	PublicCA   PublicCAConfig     `yaml:"public_ca"`
+	Issuer     IssuerConfig       `yaml:"issuer"`
 	Secrets    SecretsConfig      `yaml:"secrets"`
-	State      StateConfig        `yaml:"state"`
+	Store      StoreConfig        `yaml:"store"`
+	Audit      AuditConfig        `yaml:"audit"`
+	RateLimits RateLimitsConfig   `yaml:"rate_limits"`
 	Logging    LoggingConfig      `yaml:"logging"`
 }
 
 type BrokerServerConfig struct {
-	Address string    `yaml:"address"`
-	TLS     ServerTLS `yaml:"tls"`
+	Address           string            `yaml:"address"`
+	TLS               ServerTLSConfig   `yaml:"tls"`
+	MTLS              ServerMTLSConfig  `yaml:"mtls"`
+	ReadHeaderTimeout time.Duration `yaml:"read_header_timeout"`
+	ReadTimeout       time.Duration `yaml:"read_timeout"`
+	WriteTimeout      time.Duration `yaml:"write_timeout"`
+	IdleTimeout       time.Duration `yaml:"idle_timeout"`
 }
 
-type ServerTLS struct {
+type ServerTLSConfig struct {
 	Cert       string `yaml:"cert"`
 	Key        string `yaml:"key"`
-	ClientCA   string `yaml:"client_ca"`
 	MinVersion string `yaml:"min_version"`
+}
+
+type ServerMTLSConfig struct {
+	AgentCABundle string `yaml:"agent_ca_bundle"`
 }
 
 type BrokerPolicyConfig struct {
@@ -29,46 +43,17 @@ type BrokerPolicyConfig struct {
 	Watch bool   `yaml:"watch"`
 }
 
-type IdentityCAConfig struct {
-	Provider string       `yaml:"provider"`
-	StepCA   StepCAConfig `yaml:"step_ca"`
+type IssuerConfig struct {
+	Provider string           `yaml:"provider"`
+	ACME     ACMEConfig       `yaml:"acme"`
 }
 
-type StepCAConfig struct {
-	URL         string        `yaml:"url"`
-	Fingerprint string        `yaml:"fingerprint"`
-	RootCA      string        `yaml:"root_ca"`
-	Timeout     time.Duration `yaml:"timeout"`
-}
-
-type PublicCAConfig struct {
-	Provider    string            `yaml:"provider"`
-	LetsEncrypt LetsEncryptConfig `yaml:"letsencrypt"`
-}
-
-type LetsEncryptConfig struct {
-	Email       string        `yaml:"email"`
-	Directory   string        `yaml:"directory"`
-	Challenge   string        `yaml:"challenge"`
-	DNS         DNSConfig     `yaml:"dns"`
-	HTTP        HTTPConfig    `yaml:"http"`
-	DataDir     string        `yaml:"data_dir"`
-	RenewBefore time.Duration `yaml:"renew_before"`
-}
-
-type DNSConfig struct {
-	Provider           string            `yaml:"provider"`
-	PropagationTimeout time.Duration     `yaml:"propagation_timeout"`
-	PollingInterval    time.Duration     `yaml:"polling_interval"`
-	Credentials        CredentialsConfig `yaml:"credentials"`
-}
-
-type CredentialsConfig struct {
-	Name string `yaml:"name"`
-}
-
-type HTTPConfig struct {
-	Port int `yaml:"port"`
+type ACMEConfig struct {
+	DirectoryURL   string `yaml:"directory_url"`
+	AccountEmail   string `yaml:"account_email"`
+	AccountKey     string `yaml:"account_key"`
+	DNSProvider    string `yaml:"dns_provider"`
+	PreferredChain string `yaml:"preferred_chain"`
 }
 
 type SecretsConfig struct {
@@ -77,16 +62,171 @@ type SecretsConfig struct {
 }
 
 type VaultConfig struct {
-	Address   string `yaml:"address"`
-	TokenFile string `yaml:"token_file"`
+	Address   string            `yaml:"address"`
+	Token     string            `yaml:"token"`
+	TokenFile string            `yaml:"token_file"`
+	MountPath string            `yaml:"mount_path"`
+	KVVersion int               `yaml:"kv_version"`
+	Key       string            `yaml:"key"`
+	Timeout   time.Duration `yaml:"timeout"`
+	Namespace string            `yaml:"namespace"`
 }
 
-type StateConfig struct {
-	Path string `yaml:"path"`
+type StoreConfig struct {
+	Driver string `yaml:"driver"`
+	Path   string `yaml:"path"`
 }
 
-type LoggingConfig struct {
-	Level  string `yaml:"level"`
-	Format string `yaml:"format"`
-	File   string `yaml:"file"`
+type AuditConfig struct {
+	Enabled     *bool  `yaml:"enabled"`
+	FailureMode string `yaml:"failure_mode"` // fail_open | fail_closed
+	MirrorToLog bool   `yaml:"mirror_to_log"`
 }
+
+type RateLimitsConfig struct {
+	PerIdentityPerHour        int `yaml:"per_identity_per_hour"`
+	PerIdentityProfilePerHour int `yaml:"per_identity_profile_per_hour"`
+}
+
+func (c *BrokerConfig) ApplyDefaults() {
+	if c.Server.Address == "" {
+		c.Server.Address = ":8443"
+	}
+	if c.Server.ReadHeaderTimeout == 0 {
+		c.Server.ReadHeaderTimeout = 5 * time.Second
+	}
+	if c.Server.ReadTimeout == 0 {
+		c.Server.ReadTimeout = 10 * time.Second
+	}
+	if c.Server.WriteTimeout == 0 {
+		c.Server.WriteTimeout = 60 * time.Second
+	}
+	if c.Server.IdleTimeout == 0 {
+		c.Server.IdleTimeout = 120 * time.Second
+	}
+	if c.Server.TLS.MinVersion == "" {
+		c.Server.TLS.MinVersion = "1.2"
+	}
+	if c.Store.Driver == "" {
+		c.Store.Driver = "sqlite"
+	}
+	if c.Store.Path == "" {
+		c.Store.Path = "/var/lib/certplane/broker.db"
+	}
+	if c.Audit.FailureMode == "" {
+		c.Audit.FailureMode = "fail_open"
+	}
+	if c.Issuer.Provider == "" {
+		c.Issuer.Provider = "acme"
+	}
+	if c.RateLimits.PerIdentityPerHour == 0 {
+		c.RateLimits.PerIdentityPerHour = 50
+	}
+	if c.RateLimits.PerIdentityProfilePerHour == 0 {
+		c.RateLimits.PerIdentityProfilePerHour = 20
+	}
+	if c.Secrets.Provider == "" {
+		c.Secrets.Provider = "env"
+	}
+	if c.Secrets.Vault.MountPath == "" {
+		c.Secrets.Vault.MountPath = "secret"
+	}
+	if c.Secrets.Vault.KVVersion == 0 {
+		c.Secrets.Vault.KVVersion = 2
+	}
+	if c.Secrets.Vault.Key == "" {
+		c.Secrets.Vault.Key = "value"
+	}
+	if c.Secrets.Vault.Timeout == 0 {
+		c.Secrets.Vault.Timeout = 10 * time.Second
+	}
+	c.Logging.ApplyDefaults("info", "json", "stdout")
+}
+
+func (c *BrokerConfig) AuditEnabled() bool {
+	if c.Audit.Enabled == nil {
+		return true
+	}
+	return *c.Audit.Enabled
+}
+
+func (c *BrokerConfig) Validate() error {
+	var errs []error
+	if c.Server.TLS.Cert == "" {
+		errs = append(errs, fmt.Errorf("server.tls.cert is required"))
+	}
+	if c.Server.TLS.Key == "" {
+		errs = append(errs, fmt.Errorf("server.tls.key is required"))
+	}
+	if c.Server.MTLS.AgentCABundle == "" {
+		errs = append(errs, fmt.Errorf("server.mtls.agent_ca_bundle is required"))
+	}
+	switch c.Server.TLS.MinVersion {
+	case "1.2", "1.3":
+	default:
+		errs = append(errs, fmt.Errorf("server.tls.min_version must be 1.2 or 1.3"))
+	}
+	if c.Server.ReadHeaderTimeout <= 0 || c.Server.ReadTimeout <= 0 || c.Server.WriteTimeout <= 0 || c.Server.IdleTimeout <= 0 {
+		errs = append(errs, fmt.Errorf("server timeouts must be positive"))
+	}
+	if c.Policy.Path == "" {
+		errs = append(errs, fmt.Errorf("policy.path is required"))
+	}
+	switch c.Issuer.Provider {
+	case "acme":
+		if c.Issuer.ACME.DirectoryURL == "" {
+			errs = append(errs, fmt.Errorf("issuer.acme.directory_url is required for acme issuer"))
+		} else if _, err := url.ParseRequestURI(c.Issuer.ACME.DirectoryURL); err != nil {
+			errs = append(errs, fmt.Errorf("issuer.acme.directory_url is invalid: %w", err))
+		}
+		if c.Issuer.ACME.AccountEmail == "" {
+			errs = append(errs, fmt.Errorf("issuer.acme.account_email is required for acme issuer"))
+		}
+		if c.Issuer.ACME.AccountKey == "" {
+			errs = append(errs, fmt.Errorf("issuer.acme.account_key is required for acme issuer"))
+		}
+		if c.Issuer.ACME.DNSProvider == "" {
+			errs = append(errs, fmt.Errorf("issuer.acme.dns_provider is required for acme issuer"))
+		}
+	default:
+		errs = append(errs, fmt.Errorf("issuer.provider must be acme"))
+	}
+	switch c.Secrets.Provider {
+	case "env", "file":
+	case "vault", "openbao":
+		if c.Secrets.Vault.Address == "" {
+			errs = append(errs, fmt.Errorf("secrets.vault.address is required when secrets.provider is vault/openbao"))
+		}
+		switch c.Secrets.Vault.KVVersion {
+		case 1, 2:
+		default:
+			errs = append(errs, fmt.Errorf("secrets.vault.kv_version must be 1 or 2"))
+		}
+	default:
+		errs = append(errs, fmt.Errorf("secrets.provider must be env, file, vault or openbao"))
+	}
+	switch c.Store.Driver {
+	case "sqlite", "file":
+		if c.Store.Path == "" {
+			errs = append(errs, fmt.Errorf("store.path is required"))
+		}
+	default:
+		errs = append(errs, fmt.Errorf("store.driver must be sqlite or file"))
+	}
+	switch c.Audit.FailureMode {
+	case "fail_open", "fail_closed":
+	default:
+		errs = append(errs, fmt.Errorf("audit.failure_mode must be fail_open or fail_closed"))
+	}
+	if c.RateLimits.PerIdentityPerHour < 0 {
+		errs = append(errs, fmt.Errorf("rate_limits.per_identity_per_hour cannot be negative"))
+	}
+	if c.RateLimits.PerIdentityProfilePerHour < 0 {
+		errs = append(errs, fmt.Errorf("rate_limits.per_identity_profile_per_hour cannot be negative"))
+	}
+	if err := c.Logging.Validate(); err != nil {
+		errs = append(errs, err)
+	}
+	return errors.Join(errs...)
+}
+

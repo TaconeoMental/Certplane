@@ -7,16 +7,17 @@ import (
 	"path/filepath"
 )
 
-func FileExists(path string) bool {
+func FileExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
-		return true
+		return true, nil
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		return false
+		return false, nil
 	}
-	return false
+	return false, fmt.Errorf("stat %q: %w", path, err)
 }
+
 
 func WriteFile(path string, data []byte, mode os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {

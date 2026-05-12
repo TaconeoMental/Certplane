@@ -4,59 +4,39 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/TaconeoMental/certplane/config"
 	"github.com/TaconeoMental/certplane/internal/ca"
 	"github.com/TaconeoMental/certplane/internal/fileutil"
-	"github.com/TaconeoMental/certplane/internal/pki"
 )
 
 func Enroll(ctx context.Context, cfg *config.AgentConfig, identityCA ca.IdentityCA) error {
-	if fileutil.FileExists(cfg.Identity.Cert) {
-		return fmt.Errorf("identity cert already exists")
+	lockPath := filepath.Join(cfg.StateDir, "agent.lock")
+	lock, err := fileutil.AcquireLock(lockPath)
+	if err != nil {
+		return err
 	}
-	if !fileutil.FileExists(cfg.Identity.BootstrapToken) {
-		return fmt.Errorf("%s does not exist", cfg.Identity.BootstrapToken)
+	defer lock.Release()
+
+	exists, err := fileutil.FileExists(cfg.Identity.Cert)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return fmt.Errorf("identity cert already exists at %s", cfg.Identity.Cert)
 	}
 
-	tokenData, _ := os.ReadFile(cfg.Identity.BootstrapToken)
+	tokenData, err := os.ReadFile(cfg.Identity.BootstrapToken)
+	if err != nil {
+		return fmt.Errorf("reading bootstrap token %q: %w", cfg.Identity.BootstrapToken, err)
+	}
 	token := strings.TrimSpace(string(tokenData))
-
-	keyPair, err := pki.NewECDSAKeyPair()
-	if err != nil {
-		return fmt.Errorf("generating keypair: %w", err)
+	if token == "" {
+		return fmt.Errorf("bootstrap token is empty")
 	}
-
-	csrPEM, err := pki.GenerateCSR(keyPair.PrivateKey, cfg.Identity.CN)
-	if err != nil {
-		return fmt.Errorf("generating CSR: %w", err)
-	}
-
-	csr, err := pki.ParseCSR(csrPEM)
-	if err != nil {
-		return fmt.Errorf("parsing CSR: %w", err)
-	}
-
-	identity, err := identityCA.Enroll(ctx, &ca.EnrollmentRequest{
-		CSR:   csr,
-		Token: token,
-	})
-	if err != nil {
-		return fmt.Errorf("enrolling with identity CA: %w", err)
-	}
-
-	if err := fileutil.WriteFile(cfg.Identity.Key, keyPair.KeyPEM, 0600); err != nil {
-		return fmt.Errorf("writing identity key: %w", err)
-	}
-
-	if err := fileutil.WriteFile(cfg.Identity.Cert, identity.CertPEM, 0644); err != nil {
-		return fmt.Errorf("writing identity cert: %w", err)
-	}
-
-	if err := os.Remove(cfg.Identity.BootstrapToken); err != nil {
-		return fmt.Errorf("removing bootstrap token: %w", err)
-	}
-
+	// TODO...
 	return nil
 }
+

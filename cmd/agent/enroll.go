@@ -2,32 +2,25 @@ package main
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/TaconeoMental/certplane/config"
 	"github.com/TaconeoMental/certplane/internal/agent"
 	"github.com/spf13/cobra"
 )
 
-func newEnrollCmd(cfg *config.ConfigFlag) *cobra.Command {
+func newEnrollCommand(state *cliState) *cobra.Command {
 	return &cobra.Command{
 		Use:   "enroll",
-		Short: "Bootstrap agent identity against the CA",
+		Short: "Enroll this host and obtain an agent identity certificate",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runEnroll(cmd.Context(), cfg.Path)
+			return runEnroll(cmd.Context(), state.configPath)
 		},
 	}
 }
 
 func runEnroll(ctx context.Context, configPath string) error {
-	cfg, err := config.LoadAgent(configPath)
+	cfg, identityCA, err := loadAgentRuntime(configPath)
 	if err != nil {
-		return fmt.Errorf("loading config: %w", err)
-	}
-
-	identityCA, err := resolveIdentityCA(cfg)
-	if err != nil {
-		return fmt.Errorf("initializing identity CA: %w", err)
+		return err
 	}
 	return agent.Enroll(ctx, cfg, identityCA)
 }

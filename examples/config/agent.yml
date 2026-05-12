@@ -1,48 +1,46 @@
+state_dir: /var/lib/certplane/agent
+
 identity:
-  cn: "lvvl-edge01.h.int.whisper.cl"
-  ca_provider: step-ca
-  ca_url: https://ca.internal.whisper.cl:9000
-  ca_fingerprint: "1234567890abcdef"
+  name: pvvl-edge01.h.int.whisper.cl
+  provider: step-ca
   cert: /var/lib/certplane/agent/identity.crt
   key: /var/lib/certplane/agent/identity.key
+  issuer_ca_bundle: /var/lib/certplane/agent-ca.crt
   bootstrap_token: /etc/certplane/agent/bootstrap-token
   renew_before: 8h
   warn_before: 24h
+  step_ca:
+    url: https://ca.int.whisper.cl
+    fingerprint: "sha256-fingerprint"
+    root_ca_bundle: /etc/certplane/ca/step-ca-root.crt
 
 broker:
-  url: https://broker.int.whisper.cl:8443
-  server_ca: /etc/certplane/pki/internal-root.crt
+  url: https://certplane-broker.int.whisper.cl:8443
+  server_ca_bundle: dev/broker-ca.crt
   timeout: 30s
-  retries: 3
 
-state_dir: /var/lib/certplane/agent
-
-certificates:
-  - profile: public_edge_main
-    key: /etc/certplane/certs/edge/service.key
-    cert: /etc/certplane/certs/edge/service.crt
-    chain: /etc/certplane/certs/edge/service.chain.crt
-    fullchain: /etc/certplane/certs/edge/service.fullchain.crt
-    reload_command: systemctl reload traefik
-    renew_before: 720h
-
-  - profile: public_qa
-    key: /etc/certplane/certs/qa/service.key
-    cert: /etc/certplane/certs/qa/service.crt
-    chain: /etc/certplane/certs/qa/service.chain.crt
-    fullchain: /etc/certplane/certs/qa/service.fullchain.crt
-    reload_command: systemctl reload traefik
-    renew_before: 720h
-
-  - profile: public_monitoring
-    key: /etc/certplane/certs/monitoring/service.key
-    cert: /etc/certplane/certs/monitoring/service.crt
-    chain: /etc/certplane/certs/monitoring/service.chain.crt
-    fullchain: /etc/certplane/certs/monitoring/service.fullchain.crt
-    reload_command: systemctl reload nginx
-    renew_before: 720h
+audit:
+  enabled: true
+  mode: both
+  spool_dir: /var/lib/certplane/events
+  flush_timeout: 10s
+  max_batch_size: 100
 
 logging:
-  level: debug
-  format: json
-  file: /var/lib/certplane/log.json
+  level: info
+  format: text
+  destination: stderr
+
+certificates:
+  - name: edge-wildcard
+    profile: public_edge_main
+    dns_names:
+      - "*.whisper.cl"
+    key:  /var/lib/certplane/agent/service.key
+    cert: /var/lib/certplane/agent/service.crt
+    chain: /var/lib/certplane/agent/service.chain.crt
+    fullchain: /var/lib/certplane/agent/service.fullchain.crt
+    renew_before: 720h
+    reload_command: ""
+    reload_timeout: 30s
+
