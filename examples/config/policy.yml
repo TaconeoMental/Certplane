@@ -1,80 +1,18 @@
+version: 1
+
 profiles:
   public_edge_main:
-    cert_type: wildcard
+    type: wildcard
     dns_names:
       - "*.whisper.cl"
-    acme_challenge: dns-01
-    ttl: 2160h
-    renew_before: 720h
-
-  public_qa:
-    cert_type: wildcard
-    dns_names:
-      - "*.qa.whisper.cl"
-    acme_challenge: dns-01
-    ttl: 2160h
-    renew_before: 720h
-
-  public_monitoring:
-    cert_type: wildcard
-    dns_names:
-      - "*.monitor.whisper.cl"
-    acme_challenge: dns-01
-    ttl: 2160h
-    renew_before: 720h
-
-  public_staging:
-    cert_type: wildcard
-    dns_names:
-      - "*.stg.whisper.cl"
-    acme_challenge: dns-01
-    ttl: 2160h
-    renew_before: 720h
-
-  public_api_gateway:
-    cert_type: multi
-    dns_names:
-      - "api.whisper.cl"
-      - "api-v2.whisper.cl"
-    acme_challenge: dns-01
-    ttl: 2160h
+    acme:
+      challenge: dns-01
+      credentials: CLOUDFLARE_DNS_API_TOKEN
     renew_before: 720h
 
 hosts:
   pvvl-edge01:
-    identity: "pvvl-edge01.h.int.whisper.cl"
+    identity: pvvl-edge01.h.int.whisper.cl
     profiles:
       - public_edge_main
-      - public_api_gateway
 
-  pvvl-edge02:
-    identity: "pvvl-edge02.h.int.whisper.cl"
-    profiles:
-      - public_edge_main
-      - public_api_gateway
-
-  lvvl-krkqa01:
-    identity: "lvvl-krkqa01.h.int.whisper.cl"
-    profiles:
-      - public_qa
-
-  pvvl-grafana01:
-    identity: "pvvl-grafana01.h.int.whisper.cl"
-    profiles:
-      - public_monitoring
-
-  svvl-edge01:
-    identity: "svvl-edge01.h.int.whisper.cl"
-    profiles:
-      - public_staging
-
-  svvl-app01:
-    identity: "svvl-app01.h.int.whisper.cl"
-    profiles:
-      - public_staging
-
-  pvvl-app01:
-    identity: "pvvl-app01.h.int.whisper.cl"
-    profiles:
-      - public_edge_main
-      - public_monitoring

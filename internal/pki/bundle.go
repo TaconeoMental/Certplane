@@ -8,13 +8,13 @@ import (
 )
 
 type Bundle struct {
-	CertPEM      []byte    `json:"cert_pem"`
-	ChainPEM     []byte    `json:"chain_pem"`
-	FullChainPEM []byte    `json:"fullchain_pem"`
+	CertPEM      []byte `json:"cert_pem"`
+	ChainPEM     []byte `json:"chain_pem"`
+	FullChainPEM []byte `json:"fullchain_pem"`
 
 	LeafSerialNumber string    `json:"serial_number"`
-	NotBefore    time.Time `json:"not_before"`
-	NotAfter     time.Time `json:"not_after"`
+	NotBefore        time.Time `json:"not_before"`
+	NotAfter         time.Time `json:"not_after"`
 }
 
 func (b *Bundle) WriteToDisk(certPath, chainPath, fullchainPath string) error {
@@ -33,4 +33,3 @@ func (b *Bundle) WriteToDisk(certPath, chainPath, fullchainPath string) error {
 	}
 	return nil
 }
-

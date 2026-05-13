@@ -73,4 +73,3 @@ func CertificateHasExactDNSNames(cert *x509.Certificate, expected []string) erro
 	}
 	return nil
 }
-

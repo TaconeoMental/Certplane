@@ -19,7 +19,6 @@ func FileExists(path string) (bool, error) {
 	return false, fmt.Errorf("stat %q: %w", path, err)
 }
 
-
 // Safely replaces a file avoiding partial writes.
 //
 // The data is written to a temporary file in the same directory and then renamed
@@ -74,4 +73,3 @@ func WriteFileAtomic(path string, data []byte, mode os.FileMode) error {
 
 	return nil
 }
-

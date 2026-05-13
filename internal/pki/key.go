@@ -86,4 +86,3 @@ func EnsureECDSAPrivateKey(path string) (crypto.Signer, []byte, error) {
 	}
 	return key, pemData, nil
 }
-

@@ -5,8 +5,8 @@ import (
 
 	"github.com/TaconeoMental/certplane/config"
 	"github.com/TaconeoMental/certplane/internal/ca"
-	"github.com/TaconeoMental/certplane/internal/logging"
 	"github.com/TaconeoMental/certplane/internal/ca/providers/stepca"
+	"github.com/TaconeoMental/certplane/internal/logging"
 )
 
 func loadAgentConfig(path string) (*config.AgentConfig, error) {

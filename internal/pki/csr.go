@@ -79,4 +79,3 @@ func CSRFingerprint(csrPEM []byte) string {
 	sum := sha256.Sum256(csrPEM)
 	return hex.EncodeToString(sum[:])
 }
-
