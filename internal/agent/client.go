@@ -27,13 +27,13 @@ type issueRequest struct {
 }
 
 type issueResponse struct {
-	CertPEM      string `json:"cert_pem"`
-	ChainPEM     string `json:"chain_pem"`
-	FullChainPEM string `json:"fullchain_pem"`
+	CertPEM          string `json:"cert_pem"`
+	ChainPEM         string `json:"chain_pem"`
+	FullChainPEM     string `json:"fullchain_pem"`
 	LeafSerialNumber string `json:"serial_number"`
-	NotBefore    string `json:"not_before"`
-	NotAfter     string `json:"not_after"`
-	Cache        string `json:"cache"`
+	NotBefore        string `json:"not_before"`
+	NotAfter         string `json:"not_after"`
+	Cache            string `json:"cache"`
 }
 
 func NewBrokerClient(cfg *config.AgentConfig) (*BrokerClient, error) {
@@ -52,9 +52,9 @@ func NewBrokerClient(cfg *config.AgentConfig) (*BrokerClient, error) {
 
 	// horrendo....
 	transport := &http.Transport{TLSClientConfig: &tls.Config{
-		RootCAs: pool,
+		RootCAs:      pool,
 		Certificates: []tls.Certificate{cert},
-		MinVersion: tls.VersionTLS12},
+		MinVersion:   tls.VersionTLS12},
 	}
 	return &BrokerClient{baseURL: cfg.Broker.URL, client: &http.Client{Timeout: cfg.Broker.Timeout, Transport: transport}}, nil
 }
@@ -94,11 +94,10 @@ func (c *BrokerClient) Issue(ctx context.Context, profile string, csrPEM []byte)
 		return nil, fmt.Errorf("parsing not_after: %w", err)
 	}
 	return &pki.Bundle{
-		CertPEM: []byte(out.CertPEM),
-		ChainPEM: []byte(out.ChainPEM),
-		FullChainPEM: []byte(out.FullChainPEM),
+		CertPEM:          []byte(out.CertPEM),
+		ChainPEM:         []byte(out.ChainPEM),
+		FullChainPEM:     []byte(out.FullChainPEM),
 		LeafSerialNumber: out.LeafSerialNumber,
-		NotBefore: notBefore,
-		NotAfter: notAfter}, nil
+		NotBefore:        notBefore,
+		NotAfter:         notAfter}, nil
 }
-
