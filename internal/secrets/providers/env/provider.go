@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+
+	"github.com/TaconeoMental/certplane/internal/secrets"
 )
 
 type Provider struct{}
@@ -12,10 +14,13 @@ func New() *Provider {
 	return &Provider{}
 }
 
-func (p *Provider) Get(_ context.Context, name string) (string, error) {
-	val := os.Getenv(name)
+func (p *Provider) Get(ctx context.Context, name string) (string, error) {
+	val, ok := os.LookupEnv(name)
+	if !ok {
+		return "", fmt.Errorf("%w: environment variable %q", secrets.ErrSecretNotFound, name)
+	}
 	if val == "" {
-		return "", fmt.Errorf("environment variable %s is not set", name)
+		return "", fmt.Errorf("%w: environment variable %q", secrets.ErrSecretEmpty, name)
 	}
 	return val, nil
 }
