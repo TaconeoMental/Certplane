@@ -3,21 +3,38 @@ package ca
 import (
 	"context"
 	"crypto/x509"
+	"time"
 )
 
 type EnrollmentRequest struct {
-	CSR   *x509.CertificateRequest
-	Token string
+	CSRPEM []byte
+	Token  string
+}
+
+type RenewalRequest struct {
+	CertPEM     []byte
+	KeyPEM      []byte
+	IssuerCAPEM []byte
 }
 
 type IdentityCertificate struct {
 	Certificate *x509.Certificate
 	CertPEM     []byte
-	KeyPEM      []byte
+	ChainPEM    []byte
+	NotBefore   time.Time
+	NotAfter    time.Time
+}
+
+type IdentityEnroller interface {
+	Enroll(ctx context.Context, req EnrollmentRequest) (*IdentityCertificate, error)
+}
+
+type IdentityRenewer interface {
+	Renew(ctx context.Context, req RenewalRequest) (*IdentityCertificate, error)
 }
 
 type IdentityCA interface {
-	Enroll(ctx context.Context, req *EnrollmentRequest) (*IdentityCertificate, error)
-	Renew(ctx context.Context, certPEM []byte, keyPEM []byte, rootCAPEM []byte) (*IdentityCertificate, error)
-	Revoke(ctx context.Context, serial string) error
+	IdentityEnroller
+	IdentityRenewer
 }
+

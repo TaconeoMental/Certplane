@@ -4,14 +4,16 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
-	"net/http"
+	"strings"
 	"time"
+
+	stepapi "github.com/smallstep/certificates/api"
+	stepca "github.com/smallstep/certificates/ca"
 
 	"github.com/TaconeoMental/certplane/internal/ca"
 	"github.com/TaconeoMental/certplane/internal/pki"
-	"github.com/smallstep/certificates/api"
-	stepclient "github.com/smallstep/certificates/ca"
 )
 
 type Config struct {
@@ -22,105 +24,130 @@ type Config struct {
 }
 
 type Provider struct {
-	cfg Config
+	cfg    Config
+	client *stepca.Client
 }
 
 func New(cfg Config) (*Provider, error) {
-	// TODO: validar acá los campos del struct? defaults??? ya veremos...
-	return &Provider{cfg: cfg}, nil
+	if cfg.URL == "" {
+		return nil, fmt.Errorf("step-ca url is required")
+	}
+	if cfg.Fingerprint == "" && cfg.RootCAPath == "" {
+		return nil, fmt.Errorf("step-ca fingerprint or root CA path is required")
+	}
+	if cfg.Timeout == 0 {
+		cfg.Timeout = 10 * time.Second
+	}
+	client, err := newClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &Provider{cfg: cfg, client: client}, nil
 }
 
-// obtains the first identity certificate using a one time JWT token issued by
-// the step-ca JWK provisionesr
-func (p *Provider) Enroll(ctx context.Context, req *ca.EnrollmentRequest) (*ca.IdentityCertificate, error) {
-	if req.Token == "" {
-		return nil, fmt.Errorf("bootstrap token is required for enrollment")
+func (p *Provider) Enroll(ctx context.Context, req ca.EnrollmentRequest) (*ca.IdentityCertificate, error) {
+	token := strings.TrimSpace(req.Token)
+	if token == "" {
+		return nil, fmt.Errorf("bootstrap token is empty")
+	}
+	csr, err := pki.ParseCSRPEM(req.CSRPEM)
+	if err != nil {
+		return nil, fmt.Errorf("parsing identity CSR: %w", err)
+	}
+	if err := csr.CheckSignature(); err != nil {
+		return nil, fmt.Errorf("invalid identity CSR signature: %w", err)
 	}
 
-	client, err := stepclient.NewClient(p.cfg.URL,
-		stepclient.WithRootSHA256(p.cfg.Fingerprint),
-		stepclient.WithTimeout(p.cfg.Timeout),
-	)
+	ctx, cancel := context.WithTimeout(ctx, p.cfg.Timeout)
+	defer cancel()
+
+	resp, err := p.client.SignWithContext(ctx, &stepapi.SignRequest{
+		CsrPEM: stepapi.NewCertificateRequest(csr),
+		OTT: token,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("signing identity CSR with step-ca: %w", err)
+	}
+	return identityFromSignResponse(resp)
+}
+
+func (p *Provider) Renew(ctx context.Context, req ca.RenewalRequest) (*ca.IdentityCertificate, error) {
+	if len(req.CertPEM) == 0 || len(req.KeyPEM) == 0 {
+		return nil, fmt.Errorf("identity cert and key are required for renewal")
+	}
+	tlsCert, err := tls.X509KeyPair(req.CertPEM, req.KeyPEM)
+	if err != nil {
+		return nil, fmt.Errorf("loading identity TLS keypair: %w", err)
+	}
+
+	cfg := p.cfg
+	client, err := newClientWithCertificate(cfg, tlsCert)
+	if err != nil {
+		return nil, err
+	}
+	defer client.CloseIdleConnections()
+
+	resp, err := client.Renew(nil)
+	if err != nil {
+		return nil, fmt.Errorf("renewing identity certificate with step-ca: %w", err)
+	}
+	return identityFromSignResponse(resp)
+}
+
+func newClient(cfg Config) (*stepca.Client, error) {
+	opts := []stepca.ClientOption{stepca.WithTimeout(cfg.Timeout)}
+	if cfg.RootCAPath != "" {
+		opts = append(opts, stepca.WithRootFile(cfg.RootCAPath))
+	} else {
+		opts = append(opts, stepca.WithRootSHA256(cfg.Fingerprint))
+	}
+	client, err := stepca.NewClient(cfg.URL, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("creating step-ca client: %w", err)
 	}
-
-	resp, err := client.SignWithContext(ctx, &api.SignRequest{
-		CsrPEM: api.NewCertificateRequest(req.CSR),
-		OTT:    req.Token,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("signing certificate with step-ca: %w", err)
-	}
-
-	cert := resp.CertChainPEM[0].Certificate
-	return &ca.IdentityCertificate{
-		Certificate: cert,
-		CertPEM:     pki.EncodeCertPEM(cert),
-	}, nil
+	return client, nil
 }
 
-func (p *Provider) Renew(ctx context.Context, certPEM []byte, keyPEM []byte, rootCAPEM []byte) (*ca.IdentityCertificate, error) {
-	rootPool := x509.NewCertPool()
-	if !rootPool.AppendCertsFromPEM(rootCAPEM) {
-		return nil, fmt.Errorf("parsing root CA certificate")
+func newClientWithCertificate(cfg Config, cert tls.Certificate) (*stepca.Client, error) {
+	opts := []stepca.ClientOption{stepca.WithTimeout(cfg.Timeout), stepca.WithCertificate(cert)}
+	if cfg.RootCAPath != "" {
+		opts = append(opts, stepca.WithRootFile(cfg.RootCAPath))
+	} else {
+		opts = append(opts, stepca.WithRootSHA256(cfg.Fingerprint))
 	}
-
-	tlsCert, err := tls.X509KeyPair(certPEM, keyPEM)
+	client, err := stepca.NewClient(cfg.URL, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("loading identity keypair: %w", err)
+		return nil, fmt.Errorf("creating step-ca renewal client: %w", err)
 	}
-
-	// unlike Enroll() we now already have an identity certificate, so we need
-	// to create our own transport to auth our identity during the mTLS
-	// handhsake
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			Certificates: []tls.Certificate{tlsCert},
-			RootCAs:      rootPool,
-			MinVersion:   tls.VersionTLS12,
-		},
-	}
-
-	client, err := stepclient.NewClient(p.cfg.URL,
-		stepclient.WithTransport(transport),
-		stepclient.WithTimeout(p.cfg.Timeout),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating renewal client: %w", err)
-	}
-
-	resp, err := client.RenewWithContext(ctx, transport)
-	if err != nil {
-		return nil, fmt.Errorf("renewing certificate with step-ca: %w", err)
-	}
-
-	cert := resp.CertChainPEM[0].Certificate
-	return &ca.IdentityCertificate{
-		Certificate: cert,
-		CertPEM:     pki.EncodeCertPEM(cert),
-	}, nil
+	return client, nil
 }
 
-func (p *Provider) Revoke(ctx context.Context, serial string) error {
-	client, err := stepclient.NewClient(p.cfg.URL,
-		stepclient.WithRootSHA256(p.cfg.Fingerprint),
-		stepclient.WithTimeout(p.cfg.Timeout),
-	)
-	if err != nil {
-		return fmt.Errorf("creating step-ca client: %w", err)
+func identityFromSignResponse(resp *stepapi.SignResponse) (*ca.IdentityCertificate, error) {
+	if resp == nil {
+		return nil, fmt.Errorf("step-ca returned nil sign response")
 	}
-
-	_, err = client.RevokeWithContext(ctx, &api.RevokeRequest{
-		Serial:     serial,
-		ReasonCode: 0,
-		Reason:     "revoked by certplane",
-	}, nil)
-	if err != nil {
-		return fmt.Errorf("revoking certificate %s: %w", serial, err)
+	cert := resp.ServerPEM.Certificate
+	if cert == nil && len(resp.CertChainPEM) > 0 {
+		cert = resp.CertChainPEM[0].Certificate
 	}
-	return nil
+	if cert == nil {
+		return nil, fmt.Errorf("step-ca sign response contains no leaf certificate")
+	}
+	certPEM := certToPEM(cert)
+	var chainPEM []byte
+	if resp.CaPEM.Certificate != nil {
+		chainPEM = append(chainPEM, certToPEM(resp.CaPEM.Certificate)...)
+	}
+	for _, c := range resp.CertChainPEM {
+		if c.Certificate == nil || c.Certificate.Equal(cert) {
+			continue
+		}
+		chainPEM = append(chainPEM, certToPEM(c.Certificate)...)
+	}
+	return &ca.IdentityCertificate{Certificate: cert, CertPEM: certPEM, ChainPEM: chainPEM, NotBefore: cert.NotBefore, NotAfter: cert.NotAfter}, nil
 }
 
-// verificamos interfaz en compile time ;)
-var _ ca.IdentityCA = (*Provider)(nil)
+func certToPEM(cert *x509.Certificate) []byte {
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
+}
+
