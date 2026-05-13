@@ -3,7 +3,6 @@ package fileutil
 import (
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 )
@@ -65,10 +64,22 @@ func WriteFileAtomic(path string, data []byte, mode os.FileMode) error {
 	}
 	removeTemp = false
 
-	if dirHandle, err := os.Open(dir); err == nil {
-		_, _ = io.Copy(io.Discard, dirHandle)
-		_ = dirHandle.Sync()
-		_ = dirHandle.Close()
+	if err := syncDir(dir); err != nil {
+		return fmt.Errorf("syncing directory after rename: %w", err)
+	}
+
+	return nil
+}
+
+func syncDir(dir string) error {
+	dirHandle, err := os.Open(dir)
+	if err != nil {
+		return fmt.Errorf("opening directory %q: %w", dir, err)
+	}
+	defer dirHandle.Close()
+
+	if err := dirHandle.Sync(); err != nil {
+		return fmt.Errorf("syncing directory %q: %w", dir, err)
 	}
 
 	return nil
