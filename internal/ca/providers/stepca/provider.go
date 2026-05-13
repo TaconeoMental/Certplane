@@ -87,7 +87,10 @@ func (p *Provider) Renew(ctx context.Context, req ca.RenewalRequest) (*ca.Identi
 	}
 	defer client.CloseIdleConnections()
 
-	resp, err := client.Renew(nil)
+	ctx, cancel := context.WithTimeout(ctx, p.cfg.Timeout)
+	defer cancel()
+
+	resp, err := client.RenewWithContext(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("renewing identity certificate with step-ca: %w", err)
 	}

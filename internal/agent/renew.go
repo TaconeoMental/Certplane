@@ -33,17 +33,26 @@ func RenewIdentityIfNeeded(ctx context.Context, cfg *config.AgentConfig, identit
 	if pki.IsExpired(cert) {
 		return fmt.Errorf("identity cert expired at %s, re-enroll required", cert.NotAfter.Format(time.RFC3339))
 	}
+
+	expiresIn := time.Until(cert.NotAfter)
+
 	if !pki.ExpiresWithin(cert, cfg.Identity.RenewBefore) {
+		if pki.ExpiresWithin(cert, cfg.Identity.WarnBefore) {
+			slog.Warn(
+				"identity certificate is close to expiration",
+				"expires_in", expiresIn.Round(time.Minute).String(),
+				"not_after", cert.NotAfter.Format(time.RFC3339),
+			)
+		}
+
 		return nil
 	}
-	if pki.ExpiresWithin(cert, cfg.Identity.WarnBefore) {
-		slog.Warn(
-			"identity certificate is close to expiration",
-			"expires_in", time.Until(cert.NotAfter).Round(time.Minute),
-			"not_after", cert.NotAfter.Format(time.RFC3339),
-		)
-		return nil
-	}
+
+	slog.Info(
+		"identity certificate is inside renewal window",
+		"expires_in", expiresIn.Round(time.Minute).String(),
+		"not_after", cert.NotAfter.Format(time.RFC3339),
+	)
 
 	renewed, err := identityCA.Renew(ctx, ca.RenewalRequest{
 		CertPEM:     certData,

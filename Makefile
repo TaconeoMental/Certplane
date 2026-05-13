@@ -16,10 +16,10 @@ $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 broker: $(BIN_DIR)
-	go build $(GOFLAGS) -trimpath -ldflags="$(LDFLAGS)" -o $(BROKER_BIN) ./cmd/certplane-broker
+	go build $(GOFLAGS) -trimpath -ldflags="$(LDFLAGS)" -o $(BROKER_BIN) ./cmd/broker
 
 agent: $(BIN_DIR)
-	go build $(GOFLAGS) -trimpath -ldflags="$(LDFLAGS)" -o $(AGENT_BIN) ./cmd/certplane-agent
+	go build $(GOFLAGS) -trimpath -ldflags="$(LDFLAGS)" -o $(AGENT_BIN) ./cmd/agent
 
 test:
 	go test ./...

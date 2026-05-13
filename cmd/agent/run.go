@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"github.com/TaconeoMental/certplane/internal/agent"
 	"github.com/spf13/cobra"
 )
 
@@ -18,11 +19,8 @@ func newRunCommand(state *cliState) *cobra.Command {
 
 func runRun(ctx context.Context, configPath string) error {
 	cfg, identityCA, err := loadAgentRuntime(configPath)
-	_, _ = cfg, identityCA
 	if err != nil {
 		return err
 	}
-
-	//return agent.Run(ctx, cfg, identityCA)
-	return nil
+	return agent.Run(ctx, cfg, identityCA)
 }
