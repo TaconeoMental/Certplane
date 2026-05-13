@@ -2,31 +2,35 @@ package pki
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
+	"time"
+
+	"github.com/TaconeoMental/certplane/internal/fileutil"
 )
 
 type Bundle struct {
-	CertPEM      []byte
-	ChainPEM     []byte
-	FullChainPEM []byte
+	CertPEM      []byte    `json:"cert_pem"`
+	ChainPEM     []byte    `json:"chain_pem"`
+	FullChainPEM []byte    `json:"fullchain_pem"`
+
+	LeafSerialNumber string    `json:"serial_number"`
+	NotBefore    time.Time `json:"not_before"`
+	NotAfter     time.Time `json:"not_after"`
 }
 
 func (b *Bundle) WriteToDisk(certPath, chainPath, fullchainPath string) error {
-	files := map[string][]byte{
-		certPath:      b.CertPEM,
-		chainPath:     b.ChainPEM,
-		fullchainPath: b.FullChainPEM,
+	files := []struct {
+		path string
+		data []byte
+	}{
+		{certPath, b.CertPEM},
+		{chainPath, b.ChainPEM},
+		{fullchainPath, b.FullChainPEM},
 	}
-
-	for path, data := range files {
-		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-			return fmt.Errorf("creating directory for %s: %w", path, err)
-		}
-		if err := os.WriteFile(path, data, 0644); err != nil {
-			return fmt.Errorf("writing %s: %w", path, err)
+	for _, file := range files {
+		if err := fileutil.WriteFileAtomic(file.path, file.data, 0o644); err != nil {
+			return fmt.Errorf("writing %s: %w", file.path, err)
 		}
 	}
-
 	return nil
 }
+

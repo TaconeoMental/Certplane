@@ -7,6 +7,12 @@ import (
 	"path/filepath"
 )
 
+// Basic lock implementation to prevent two processes from using the same
+// resource at once.
+//
+// It uses an on disk lock file, so it works across separate agent processes.
+// This is useful when a systemd timer and a manual run could overlap.
+
 type Lock struct {
 	path string
 	file *os.File
