@@ -37,4 +37,3 @@ type IdentityCA interface {
 	IdentityEnroller
 	IdentityRenewer
 }
-

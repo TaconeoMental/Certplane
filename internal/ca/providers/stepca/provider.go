@@ -63,7 +63,7 @@ func (p *Provider) Enroll(ctx context.Context, req ca.EnrollmentRequest) (*ca.Id
 
 	resp, err := p.client.SignWithContext(ctx, &stepapi.SignRequest{
 		CsrPEM: stepapi.NewCertificateRequest(csr),
-		OTT: token,
+		OTT:    token,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("signing identity CSR with step-ca: %w", err)
