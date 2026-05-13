@@ -144,7 +144,13 @@ func identityFromSignResponse(resp *stepapi.SignResponse) (*ca.IdentityCertifica
 		}
 		chainPEM = append(chainPEM, certToPEM(c.Certificate)...)
 	}
-	return &ca.IdentityCertificate{Certificate: cert, CertPEM: certPEM, ChainPEM: chainPEM, NotBefore: cert.NotBefore, NotAfter: cert.NotAfter}, nil
+	return &ca.IdentityCertificate{
+		Certificate: cert,
+		CertPEM:     certPEM,
+		ChainPEM:    chainPEM,
+		NotBefore:   cert.NotBefore,
+		NotAfter:    cert.NotAfter,
+	}, nil
 }
 
 func certToPEM(cert *x509.Certificate) []byte {
