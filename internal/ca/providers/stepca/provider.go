@@ -151,3 +151,4 @@ func certToPEM(cert *x509.Certificate) []byte {
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 }
 
+var _ ca.IdentityCA = (*Provider)(nil)
