@@ -2,15 +2,6 @@ package policy
 
 import "sync/atomic"
 
-// Manager keeps the currently active compiled policy.
-//
-// Policies are loaded from the YAML file, validated, normalized and compiled
-// before they are used by request handlers. These handlers only interact with
-// the compiled snapshot, which avoids re parsing on every request.
-//
-// Reloads are also atomic, which means that a new policy replaces the current
-// one only after it has been fully loaded and validated. If a reload fails,
-// the previous valid policy remains active.
 type Manager struct {
 	path    string
 	current atomic.Value // *CompiledPolicy

@@ -12,6 +12,7 @@ var (
 	ErrUnknownProfile    = errors.New("unknown profile")
 	ErrProfileNotAllowed = errors.New("profile not allowed")
 	ErrCSRNamesMismatch  = errors.New("csr dns names do not match profile")
+	ErrInvalidCSR        = errors.New("invalid csr")
 )
 
 type Config struct {
@@ -62,12 +63,34 @@ type CompiledACMEProfile struct {
 	Credentials string `json:"credentials"`
 }
 
+type ProfileSet map[string]bool
+
+func NewProfileSet(names []string) ProfileSet {
+	set := make(ProfileSet, len(names))
+	for _, name := range names {
+		set[name] = true
+	}
+	return set
+}
+
+func (s ProfileSet) Contains(name string) bool {
+	return s[name]
+}
+
+func (s ProfileSet) Names() []string {
+	names := make([]string, 0, len(s))
+	for name := range s {
+		names = append(names, name)
+	}
+	return names
+}
+
 type CompiledHost struct {
 	Name     string
 	Identity string
-	Profiles map[string]bool
+	Profiles ProfileSet
 }
 
 func (h CompiledHost) AllowsProfile(name string) bool {
-	return h.Profiles[name]
+	return h.Profiles.Contains(name)
 }

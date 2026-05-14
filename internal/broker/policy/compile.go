@@ -163,7 +163,7 @@ func compileHost(name string, raw Host, profiles map[string]CompiledProfile) (Co
 		return CompiledHost{}, fmt.Errorf("host %q must reference at least one profile", name)
 	}
 
-	allowedProfiles := make(map[string]bool, len(raw.Profiles))
+	allowedProfiles := make(ProfileSet, len(raw.Profiles))
 	for _, profileName := range raw.Profiles {
 		profileName = strings.TrimSpace(profileName)
 		if profileName == "" {

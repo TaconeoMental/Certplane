@@ -1,11 +1,8 @@
 package policy
 
-// This file contains the broker authorization logic.
-//
-// Authorization starts from the authenticated agent identity extracted from
-// the mTLS client certificate. The broker checks whether that identity is
-// allowed to request the selected profile, then validates that the CSR DNS
-// names exactly match the DNS names defined by that profile.
+// Authorize checks whether an authenticated agent identity may request a
+// profile, then verifies that the untrusted CSR requests exactly the DNS names
+// defined by that profile.
 
 import (
 	"crypto/x509"
@@ -15,6 +12,10 @@ import (
 )
 
 func (p *CompiledPolicy) Authorize(identity, profileName string, csr *x509.CertificateRequest) (*CompiledProfile, error) {
+	if csr == nil {
+		return nil, ErrInvalidCSR
+	}
+
 	host, ok := p.HostsByIdentity[identity]
 	if !ok {
 		return nil, ErrUnknownIdentity
@@ -30,7 +31,7 @@ func (p *CompiledPolicy) Authorize(identity, profileName string, csr *x509.Certi
 
 	csrNames, err := dnsname.CanonicalList(csr.DNSNames)
 	if err != nil {
-		return &profile, fmt.Errorf("invalid CSR DNS names: %w", err)
+		return &profile, fmt.Errorf("%w: %v", ErrInvalidCSR, err)
 	}
 	if !sameStringSet(csrNames, profile.DNSNames) {
 		return &profile, ErrCSRNamesMismatch
