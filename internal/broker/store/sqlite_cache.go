@@ -19,10 +19,10 @@ type certificateCacheRow struct {
 	IssuerDirectory    string
 	IssuerAccountKeyID string
 
-	CertPEM          []byte
-	ChainPEM         []byte
-	FullChainPEM     []byte
-	LeafLeafSerialNumber string
+	CertPEM              []byte
+	ChainPEM             []byte
+	FullChainPEM         []byte
+	LeafSerialNumber     string
 
 	NotBefore string
 	NotAfter  string
@@ -46,7 +46,7 @@ func (r *certificateCacheRow) scan(row rowScanner) error {
 		&r.CertPEM,
 		&r.ChainPEM,
 		&r.FullChainPEM,
-		&r.LeafLeafSerialNumber,
+		&r.LeafSerialNumber,
 		&r.NotBefore,
 		&r.NotAfter,
 		&r.CreatedAt,
@@ -86,7 +86,7 @@ func (r certificateCacheRow) cacheEntry() (CacheEntry, error) {
 			CertPEM:      r.CertPEM,
 			ChainPEM:     r.ChainPEM,
 			FullChainPEM: r.FullChainPEM,
-			LeafSerialNumber: r.LeafLeafSerialNumber,
+			LeafSerialNumber: r.LeafSerialNumber,
 			NotBefore:    notBefore,
 			NotAfter:     notAfter,
 		},
