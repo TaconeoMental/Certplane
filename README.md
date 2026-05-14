@@ -1,51 +1,28 @@
 # Certplane
 
-A lightweight control plane for certificate issuance for non-k8s
-infrastructures, built around machine identity, declarative policy, and
-host-local key generation.
+**Certplane is a small certificate control plane for servers that do not run Kubernetes.**
 
-## Agent enroll
+It helps issue and renew TLS certificates across VMs, bare metal hosts and homelab infrastructure without copying private keys between machines or distributing DNS provider credentials to every server.
 
-```mermaid
-sequenceDiagram
-    actor Operator
-    participant ICA as Internal CA
-    participant Agent
+## What it does
 
-    Operator->>ICA: generate bootstrap token
-    ICA-->>Operator: short-lived token
-    Operator->>Agent: write token to host
+Certplane has two binaries:
 
-    Agent->>Agent: generate identity.key
-    Agent->>Agent: generate CSR
+| Component | Role |
+|---|---|
+| `broker` | Central service that authenticates agents, enforces certificate policy, talks to the configured ACME issuer, caches issued certificates and records audit events. |
+| `agent` | Runs on each host, keeps private keys local, submits CSRs to the broker and installs returned certificate bundles. |
 
-    Agent->>ICA: CSR + token
-    ICA-->>Agent: identity.crt
-```
+Agents authenticate to the broker with mTLS using machine identity certificates issued by an internal CA such as `step-ca`.
 
-## Agent run
-```mermaid
-sequenceDiagram
-    participant Agent
-    participant Broker
-    participant PCA as Public CA
+## Key properties
 
-    Agent->>Agent: generate service.key
-    Agent->>Agent: generate CSR
+- Service private keys are generated and kept on the host that uses them.
+- Certificate authorization is controlled by a declarative YAML policy.
+- Designed to fit infrastructure-as-code workflows where policy and agent configs are rendered from inventory.
 
-    Agent->>Broker: mTLS(CSR + profile)
-    Note over Agent,Broker: identity.crt presented as client cert
+## Documentation
 
-    Broker->>Broker: verify mTLS cert
-    Broker->>Broker: check policy
-    Broker->>Broker: validate CSR SANs
+Full documentation lives at:
 
-    Broker-->>Agent: cached certificate bundle (service.crt)
-    Note over Broker,Agent: if requested certificate already exists
-
-    Broker->>PCA: CSR via ACME
-    PCA-->>Broker: service.crt + chain
-    Broker->>Broker: cache certificate
-
-    Broker-->>Agent: certificate bundle (service.crt)
-```
+[certplane.kippel.org](https://certplane.kippel.org)
