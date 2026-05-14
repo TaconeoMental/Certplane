@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/TaconeoMental/certplane/internal/broker/audit"
 )
 
 func (s *Server) HTTPServer() (*http.Server, error) {
@@ -20,6 +22,7 @@ func (s *Server) HTTPServer() (*http.Server, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.healthz)
 	mux.HandleFunc("GET /readyz", s.readyz)
+	mux.HandleFunc("POST /v1/certificates", s.issueCertificate)
 
 	return &http.Server{
 		Addr:              s.cfg.Server.Address,
@@ -41,6 +44,8 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	_ = s.record(ctx, audit.Event{Type: audit.EventBrokerStarted, Severity: audit.SeverityInfo, Decision: audit.DecisionAllow, ReasonCode: audit.ReasonOK})
 
 	go func() {
 		<-ctx.Done()
@@ -76,7 +81,7 @@ func tlsMinVersion(version string) uint16 {
 	}
 	return tls.VersionTLS12
 }
-// Loads a PEM CA bundle used as a trust anchor.
+
 func loadCertPool(path string) (*x509.CertPool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
