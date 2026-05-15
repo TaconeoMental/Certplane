@@ -4,15 +4,18 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 
 	"github.com/TaconeoMental/certplane/config"
 	"github.com/TaconeoMental/certplane/internal/broker/audit"
+	"github.com/TaconeoMental/certplane/internal/broker/issuer"
 	"github.com/TaconeoMental/certplane/internal/broker/store"
 	"github.com/TaconeoMental/certplane/internal/logging"
 	"github.com/TaconeoMental/certplane/internal/secrets"
-	envsecrets "github.com/TaconeoMental/certplane/internal/secrets/providers/env"
-	filesecrets "github.com/TaconeoMental/certplane/internal/secrets/providers/file"
+	envsecrets "github.com/TaconeoMental/certplane/internal/secrets/env"
+	filesecrets "github.com/TaconeoMental/certplane/internal/secrets/file"
+	vaultsecrets "github.com/TaconeoMental/certplane/internal/secrets/vault"
 )
 
 type brokerStore interface {
@@ -40,6 +43,9 @@ func openBrokerStore(cfg *config.BrokerConfig) (brokerStore, error) {
 	switch cfg.Store.Driver {
 	case "sqlite":
 		return store.NewSQLiteStore(cfg.Store.Path)
+	case "file":
+		slog.Warn("using file store, sqlite is recommended outside development")
+		return store.NewFileStore(cfg.Store.Path), nil
 	default:
 		return nil, fmt.Errorf("unknown store driver %q", cfg.Store.Driver)
 	}
@@ -61,7 +67,22 @@ func buildSecretsProvider(cfg *config.BrokerConfig) (secrets.Provider, error) {
 		return envsecrets.New(), nil
 	case "file":
 		return filesecrets.New(), nil
+	case "vault", "openbao":
+		return vaultsecrets.New(vaultsecrets.Config{
+			Address:   cfg.Secrets.Vault.Address,
+			Token:     cfg.Secrets.Vault.Token,
+			TokenFile: cfg.Secrets.Vault.TokenFile,
+			MountPath: cfg.Secrets.Vault.MountPath,
+			KVVersion: cfg.Secrets.Vault.KVVersion,
+			Key:       cfg.Secrets.Vault.Key,
+			Timeout:   cfg.Secrets.Vault.Timeout,
+			Namespace: cfg.Secrets.Vault.Namespace,
+		})
 	default:
 		return nil, fmt.Errorf("unknown secrets provider %q", cfg.Secrets.Provider)
 	}
+}
+
+func buildIssuer(cfg *config.BrokerConfig, _ secrets.Provider) (issuer.Issuer, error) {
+	return nil, fmt.Errorf("unknown issuer provider %q", cfg.Issuer.Provider)
 }
