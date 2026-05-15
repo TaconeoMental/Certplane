@@ -40,6 +40,7 @@ func newRootCommand() *cobra.Command {
 	cmd.AddCommand(
 		newEnrollCommand(state),
 		newRunCommand(state),
+		newCheckCommand(state),
 	)
 
 	return cmd
