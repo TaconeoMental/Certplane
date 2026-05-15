@@ -10,6 +10,7 @@ import (
 	"github.com/TaconeoMental/certplane/config"
 	"github.com/TaconeoMental/certplane/internal/broker/audit"
 	"github.com/TaconeoMental/certplane/internal/broker/issuer"
+	acmeissuer "github.com/TaconeoMental/certplane/internal/broker/issuer/acme"
 	"github.com/TaconeoMental/certplane/internal/broker/store"
 	"github.com/TaconeoMental/certplane/internal/logging"
 	"github.com/TaconeoMental/certplane/internal/secrets"
@@ -83,6 +84,17 @@ func buildSecretsProvider(cfg *config.BrokerConfig) (secrets.Provider, error) {
 	}
 }
 
-func buildIssuer(cfg *config.BrokerConfig, _ secrets.Provider) (issuer.Issuer, error) {
-	return nil, fmt.Errorf("unknown issuer provider %q", cfg.Issuer.Provider)
+func buildIssuer(cfg *config.BrokerConfig, secretProvider secrets.Provider) (issuer.Issuer, error) {
+	switch cfg.Issuer.Provider {
+	case "acme":
+		return acmeissuer.New(acmeissuer.Config{
+			DirectoryURL:   cfg.Issuer.ACME.DirectoryURL,
+			AccountEmail:   cfg.Issuer.ACME.AccountEmail,
+			AccountKey:     cfg.Issuer.ACME.AccountKey,
+			DNSProvider:    cfg.Issuer.ACME.DNSProvider,
+			PreferredChain: cfg.Issuer.ACME.PreferredChain,
+		}, secretProvider)
+	default:
+		return nil, fmt.Errorf("unknown issuer provider %q", cfg.Issuer.Provider)
+	}
 }
