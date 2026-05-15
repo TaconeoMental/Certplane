@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newServeCommand(state *cliState) *cobra.Command {
+func newServeCommand(state *cliOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   "serve",
 		Short: "Run the broker HTTPS/mTLS API",
@@ -42,7 +42,7 @@ func runServe(ctx context.Context, configPath string) error {
 	}
 	defer brokerStore.Close()
 	_ = secretProvider
-	_= policyManager
+	_ = policyManager
 	// TODO
 	return nil
 }

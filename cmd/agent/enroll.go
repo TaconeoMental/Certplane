@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newEnrollCommand(state *cliState) *cobra.Command {
+func newEnrollCommand(state *cliOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   "enroll",
 		Short: "Enroll this host and obtain an agent identity certificate",

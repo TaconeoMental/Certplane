@@ -6,12 +6,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type cliState struct {
+type cliOptions struct {
 	configPath string
 }
 
 func newRootCommand() *cobra.Command {
-	state := &cliState{}
+	state := &cliOptions{}
 	cmd := &cobra.Command{
 		Use:           os.Args[0],
 		Short:         "Certplane agent",

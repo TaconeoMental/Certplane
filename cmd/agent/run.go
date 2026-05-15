@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newRunCommand(state *cliState) *cobra.Command {
+func newRunCommand(state *cliOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   "run",
 		Short: "Run the agent renewal loop",

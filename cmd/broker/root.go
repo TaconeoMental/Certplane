@@ -6,12 +6,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type cliState struct {
+type cliOptions struct {
 	configPath string
 }
 
 func newRootCommand() *cobra.Command {
-	state := &cliState{}
+	opts := &cliOptions{}
 	cmd := &cobra.Command{
 		Use:           os.Args[0],
 		Short:         "Certplane broker",
@@ -27,7 +27,7 @@ func newRootCommand() *cobra.Command {
 	})
 
 	cmd.PersistentFlags().StringVarP(
-		&state.configPath,
+		&opts.configPath,
 		"config",
 		"c",
 		"",
@@ -38,7 +38,10 @@ func newRootCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		newServeCommand(state),
+		newServeCommand(opts),
+		newPolicyCommand(),
+		newCertsCommand(opts),
+		newAuditCommand(opts),
 	)
 
 	return cmd
