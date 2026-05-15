@@ -53,4 +53,3 @@ var auditEventColumns = []string{
 func columnList(columns []string) string {
 	return strings.Join(columns, ", ")
 }
-

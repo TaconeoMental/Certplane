@@ -45,4 +45,3 @@ func (s *SQLiteStore) Close() error {
 	}
 	return s.db.Close()
 }
-

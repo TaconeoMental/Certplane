@@ -19,10 +19,10 @@ type certificateCacheRow struct {
 	IssuerDirectory    string
 	IssuerAccountKeyID string
 
-	CertPEM              []byte
-	ChainPEM             []byte
-	FullChainPEM         []byte
-	LeafSerialNumber     string
+	CertPEM          []byte
+	ChainPEM         []byte
+	FullChainPEM     []byte
+	LeafSerialNumber string
 
 	NotBefore string
 	NotAfter  string
@@ -83,12 +83,12 @@ func (r certificateCacheRow) cacheEntry() (CacheEntry, error) {
 			IssuerAccountKeyID: r.IssuerAccountKeyID,
 		},
 		Bundle: pki.Bundle{
-			CertPEM:      r.CertPEM,
-			ChainPEM:     r.ChainPEM,
-			FullChainPEM: r.FullChainPEM,
+			CertPEM:          r.CertPEM,
+			ChainPEM:         r.ChainPEM,
+			FullChainPEM:     r.FullChainPEM,
 			LeafSerialNumber: r.LeafSerialNumber,
-			NotBefore:    notBefore,
-			NotAfter:     notAfter,
+			NotBefore:        notBefore,
+			NotAfter:         notAfter,
 		},
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
@@ -243,4 +243,3 @@ DO UPDATE SET
   not_before = excluded.not_before,
   not_after = excluded.not_after,
   updated_at = excluded.updated_at`
-

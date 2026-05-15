@@ -179,4 +179,3 @@ func migrationAlreadyApplied(ctx context.Context, tx *sql.Tx, version int) (bool
 	}
 	return count > 0, nil
 }
-

@@ -76,4 +76,3 @@ func decodeJSON(value sql.NullString, dst any, field string) error {
 	}
 	return nil
 }
-
