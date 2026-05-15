@@ -1,6 +1,14 @@
 package policy
 
-import "sync/atomic"
+import (
+	"context"
+	"log/slog"
+	"os"
+	"sync/atomic"
+	"time"
+)
+
+const watchInterval = 5 * time.Second
 
 type Manager struct {
 	path    string
@@ -30,4 +38,36 @@ func (m *Manager) Current() *CompiledPolicy {
 		return nil
 	}
 	return current.(*CompiledPolicy)
+}
+
+func (m *Manager) Watch(ctx context.Context) {
+	var lastMod time.Time
+	if info, err := os.Stat(m.path); err == nil {
+		lastMod = info.ModTime()
+	}
+
+	ticker := time.NewTicker(watchInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			info, err := os.Stat(m.path)
+			if err != nil {
+				slog.Warn("policy watch: stat failed", "path", m.path, "error", err)
+				continue
+			}
+			if !info.ModTime().After(lastMod) {
+				continue
+			}
+			lastMod = info.ModTime()
+			if err := m.Reload(); err != nil {
+				slog.Warn("policy watch: reload failed", "path", m.path, "error", err)
+				continue
+			}
+			slog.Info("policy reloaded", "path", m.path, "hash", m.Current().Hash)
+		}
+	}
 }

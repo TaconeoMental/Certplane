@@ -47,6 +47,10 @@ func runServe(ctx context.Context, configPath string) error {
 		return err
 	}
 
+	if cfg.Policy.Watch {
+		go policyManager.Watch(ctx)
+	}
+
 	auditRecorder := buildAuditRecorder(cfg, brokerStore)
 	server := broker.NewServer(cfg, policyManager, brokerStore, certIssuer, auditRecorder, slog.Default())
 	return server.ListenAndServe(ctx)
