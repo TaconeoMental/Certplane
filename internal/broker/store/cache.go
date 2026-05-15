@@ -161,19 +161,23 @@ func (s *FileStore) WriteAuditEvents(ctx context.Context, w io.Writer, limit int
 	}
 	defer file.Close()
 
+	var lines []string
 	scanner := bufio.NewScanner(file)
-	count := 0
 	for scanner.Scan() {
-		if limit > 0 && count >= limit {
-			break
-		}
-		if _, err := fmt.Fprintln(w, scanner.Text()); err != nil {
-			return fmt.Errorf("writing audit event: %w", err)
-		}
-		count++
+		lines = append(lines, scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("reading file audit store %q: %w", path, err)
+	}
+
+	if limit > 0 && len(lines) > limit {
+		lines = lines[len(lines)-limit:]
+	}
+
+	for _, line := range lines {
+		if _, err := fmt.Fprintln(w, line); err != nil {
+			return fmt.Errorf("writing audit event: %w", err)
+		}
 	}
 	return nil
 }

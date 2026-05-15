@@ -50,7 +50,6 @@ func NewBrokerClient(cfg *config.AgentConfig) (*BrokerClient, error) {
 		return nil, fmt.Errorf("broker server CA bundle contains no certificates")
 	}
 
-	// horrendo....
 	transport := &http.Transport{TLSClientConfig: &tls.Config{
 		RootCAs:      pool,
 		Certificates: []tls.Certificate{cert},

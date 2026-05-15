@@ -165,5 +165,8 @@ func (c *AgentConfig) Validate() error {
 			errs = append(errs, fmt.Errorf("certificates[%s].reload_timeout must be positive", name))
 		}
 	}
+	if err := c.Logging.Validate(); err != nil {
+		errs = append(errs, err)
+	}
 	return errors.Join(errs...)
 }
