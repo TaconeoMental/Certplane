@@ -24,7 +24,7 @@ func (l *Limiter) Allow(identity, profile string) error {
 	now := time.Now()
 	windowStart := now.Add(-1 * time.Hour)
 	l.identity[identity] = prune(l.identity[identity], windowStart)
-	profileKey := identity + "|" + profile
+	profileKey := identity + "\x00" + profile
 	l.profile[profileKey] = prune(l.profile[profileKey], windowStart)
 	if l.perIdentity > 0 && len(l.identity[identity]) >= l.perIdentity {
 		return fmt.Errorf("rate limit exceeded for identity %q", identity)

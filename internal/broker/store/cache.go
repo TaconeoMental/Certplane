@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,7 +30,15 @@ type CertificateCacheKey struct {
 }
 
 func (k CertificateCacheKey) String() string {
-	return k.Identity + "|" + k.ProfileName + "|" + k.ProfileHash + "|" + k.PublicKeySHA256 + "|" + k.IssuerName + "|" + k.IssuerDirectory + "|" + k.IssuerAccountKeyID
+	return strings.Join([]string{
+		k.Identity,
+		k.ProfileName,
+		k.ProfileHash,
+		k.PublicKeySHA256,
+		k.IssuerName,
+		k.IssuerDirectory,
+		k.IssuerAccountKeyID,
+	}, "\x00")
 }
 
 type CertificateStore interface {
