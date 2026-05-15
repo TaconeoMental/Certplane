@@ -142,7 +142,7 @@ func identityFromSignResponse(resp *stepapi.SignResponse) (*ca.IdentityCertifica
 		chainPEM = append(chainPEM, certToPEM(resp.CaPEM.Certificate)...)
 	}
 	for _, c := range resp.CertChainPEM {
-		if c.Certificate == nil || c.Certificate.Equal(cert) {
+		if c.Certificate == nil || c.Equal(cert) {
 			continue
 		}
 		chainPEM = append(chainPEM, certToPEM(c.Certificate)...)

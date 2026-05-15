@@ -130,7 +130,7 @@ func (s *SQLiteStore) migrate(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("starting sqlite migration transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if err := ensureMigrationTable(ctx, tx); err != nil {
 		return err

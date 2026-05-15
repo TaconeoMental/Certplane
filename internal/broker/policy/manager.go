@@ -37,7 +37,8 @@ func (m *Manager) Current() *CompiledPolicy {
 	if current == nil {
 		return nil
 	}
-	return current.(*CompiledPolicy)
+	p, _ := current.(*CompiledPolicy)
+	return p
 }
 
 func (m *Manager) Watch(ctx context.Context) {

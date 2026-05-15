@@ -19,7 +19,7 @@ func Enroll(ctx context.Context, cfg *config.AgentConfig, identityCA ca.Identity
 	if err != nil {
 		return err
 	}
-	defer lock.Release()
+	defer func() { _ = lock.Release() }()
 
 	exists, err := fileutil.FileExists(cfg.Identity.Cert)
 	if err != nil {

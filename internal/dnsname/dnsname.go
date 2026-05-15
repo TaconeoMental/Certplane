@@ -49,7 +49,7 @@ func Canonical(name string) (string, error) {
 				return "", fmt.Errorf("DNS label %q cannot start or end with '-'", label)
 			}
 			for _, r := range label {
-				if !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-') {
+				if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' {
 					return "", fmt.Errorf("DNS label %q contains invalid character %q", label, r)
 				}
 			}
