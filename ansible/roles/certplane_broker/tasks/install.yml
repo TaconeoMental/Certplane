@@ -1,0 +1,23 @@
+---
+- name: create certplane group
+  ansible.builtin.group:
+    name: "{{ certplane_broker_group }}"
+    system: true
+
+- name: create certplane user
+  ansible.builtin.user:
+    name: "{{ certplane_broker_user }}"
+    group: "{{ certplane_broker_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ certplane_broker_state_dir }}"
+    create_home: false
+
+- name: install certplane-broker binary
+  ansible.builtin.copy:
+    src: "{{ certplane_broker_binary }}"
+    dest: "{{ certplane_broker_binary_dest }}"
+    owner: root
+    group: root
+    mode: "0755"
+  notify: restart certplane-broker

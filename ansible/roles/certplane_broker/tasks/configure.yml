@@ -1,0 +1,68 @@
+---
+- name: create config directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ certplane_broker_group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ certplane_broker_config_dir }}", mode: "0755" }
+    - { path: "{{ certplane_broker_config_dir }}/tls", mode: "0750" }
+    - { path: "{{ certplane_broker_config_dir }}/ca", mode: "0755" }
+    - { path: "{{ certplane_broker_state_dir }}", owner: "{{ certplane_broker_user }}", mode: "0750" }
+    - { path: "{{ certplane_broker_state_dir }}/acme", owner: "{{ certplane_broker_user }}", mode: "0700" }
+
+- name: deploy TLS certificate
+  ansible.builtin.copy:
+    src: "{{ certplane_broker_tls_cert_src }}"
+    dest: "{{ certplane_broker_config_dir }}/tls/broker.crt"
+    owner: root
+    group: "{{ certplane_broker_group }}"
+    mode: "0644"
+  notify: restart certplane-broker
+
+- name: deploy TLS key
+  ansible.builtin.copy:
+    src: "{{ certplane_broker_tls_key_src }}"
+    dest: "{{ certplane_broker_config_dir }}/tls/broker.key"
+    owner: root
+    group: "{{ certplane_broker_group }}"
+    mode: "0640"
+  notify: restart certplane-broker
+
+- name: deploy agent CA bundle
+  ansible.builtin.copy:
+    src: "{{ certplane_broker_agent_ca_bundle_src }}"
+    dest: "{{ certplane_broker_config_dir }}/ca/agent-identity-ca-bundle.crt"
+    owner: root
+    group: "{{ certplane_broker_group }}"
+    mode: "0644"
+  notify: restart certplane-broker
+
+- name: deploy ACME account key
+  ansible.builtin.copy:
+    src: "{{ certplane_broker_acme_account_key_src }}"
+    dest: "{{ certplane_broker_state_dir }}/acme/account.key"
+    owner: "{{ certplane_broker_user }}"
+    group: "{{ certplane_broker_group }}"
+    mode: "0600"
+  when: certplane_broker_acme_account_key_src is defined
+
+- name: deploy policy file
+  ansible.builtin.copy:
+    src: "{{ certplane_broker_policy_src }}"
+    dest: "{{ certplane_broker_policy_path }}"
+    owner: root
+    group: "{{ certplane_broker_group }}"
+    mode: "0644"
+  notify: restart certplane-broker
+
+- name: deploy broker config
+  ansible.builtin.template:
+    src: broker.yml.j2
+    dest: "{{ certplane_broker_config_dir }}/broker.yml"
+    owner: root
+    group: "{{ certplane_broker_group }}"
+    mode: "0640"
+  notify: restart certplane-broker

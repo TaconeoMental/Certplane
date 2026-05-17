@@ -1,0 +1,15 @@
+[Unit]
+Description=certplane broker
+After=network.target
+
+[Service]
+Type=simple
+User={{ certplane_broker_user }}
+Group={{ certplane_broker_group }}
+ExecStart={{ certplane_broker_binary_dest }} -c {{ certplane_broker_config_dir }}/broker.yml serve
+Restart=on-failure
+RestartSec=5s
+ReadWritePaths={{ certplane_broker_state_dir }}
+
+[Install]
+WantedBy=multi-user.target
