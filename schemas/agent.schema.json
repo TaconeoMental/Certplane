@@ -6,28 +6,27 @@
   "required": ["identity", "broker", "certificates"],
   "additionalProperties": false,
   "properties": {
+    "state_dir": {
+      "type": "string",
+      "description": "Directory used as the base for agent state.",
+      "default": "/var/lib/certplane/agent"
+    },
+
     "identity": {
       "type": "object",
-      "required": ["cn", "ca_provider", "ca_url", "ca_fingerprint", "cert", "key"],
+      "required": ["name", "provider", "cert", "key", "issuer_ca_bundle"],
       "additionalProperties": false,
       "properties": {
-        "cn": {
+        "name": {
           "type": "string",
           "description": "Common Name for this host's identity certificate.",
-          "examples": ["lvvl-edge01.h.int.whisper.cl"]
+          "examples": ["pvvl-edge01.h.int.whisper.cl"]
         },
-        "ca_provider": {
+        "provider": {
           "type": "string",
           "enum": ["step-ca"],
-          "description": "CA provider."
-        },
-        "ca_url": {
-          "type": "string",
-          "description": "URL of the CA API used to enroll and renew this agent's identity certificate."
-        },
-        "ca_fingerprint": {
-          "type": "string",
-          "description": "SHA256 fingerprint of the step-ca root CA."
+          "description": "Identity CA provider.",
+          "default": "step-ca"
         },
         "cert": {
           "type": "string",
@@ -37,9 +36,13 @@
           "type": "string",
           "description": "Path where the agent writes and reads its identity private key (PEM)."
         },
+        "issuer_ca_bundle": {
+          "type": "string",
+          "description": "Path to the CA bundle used to verify the identity certificate issuer (PEM)."
+        },
         "bootstrap_token": {
           "type": "string",
-          "description": "Path to the bootstrap token file. Only required during initial enrollment."
+          "description": "Path to the bootstrap token file. Required only during initial enrollment."
         },
         "renew_before": {
           "type": "string",
@@ -49,45 +52,58 @@
         },
         "warn_before": {
           "type": "string",
-          "description": "Write a warning to stderr when less than this time remains before expiry. Should be greater than renew_before.",
-          "examples": ["12h"],
-          "default": "12h"
+          "description": "Log a warning when less than this time remains before expiry. Should be greater than renew_before.",
+          "examples": ["24h"],
+          "default": "24h"
+        },
+        "step_ca": {
+          "type": "object",
+          "description": "step-ca provider configuration. Required when provider is step-ca.",
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL of the step-ca API.",
+              "examples": ["https://ca.int.whisper.cl"]
+            },
+            "fingerprint": {
+              "type": "string",
+              "description": "SHA256 fingerprint of the step-ca root CA. Required if root_ca_bundle is not set."
+            },
+            "root_ca_bundle": {
+              "type": "string",
+              "description": "Path to the step-ca root CA bundle (PEM). Required if fingerprint is not set."
+            },
+            "timeout": {
+              "type": "string",
+              "description": "Timeout for step-ca API calls.",
+              "default": "10s"
+            }
+          }
         }
       }
     },
 
     "broker": {
       "type": "object",
-      "required": ["url", "server_ca"],
+      "required": ["url", "server_ca_bundle"],
       "additionalProperties": false,
       "properties": {
         "url": {
           "type": "string",
           "description": "URL of the certplane-broker API.",
-          "examples": ["https://broker.internal.whisper.cl:8443"]
+          "examples": ["https://certplane-broker.int.whisper.cl:8443"]
         },
-        "server_ca": {
+        "server_ca_bundle": {
           "type": "string",
-          "description": "Path to the internal root CA certificate (PEM)."
+          "description": "Path to the CA bundle used to verify the broker's TLS certificate (PEM)."
         },
         "timeout": {
           "type": "string",
           "description": "Timeout for broker API calls.",
           "default": "30s"
-        },
-        "retries": {
-          "type": "integer",
-          "description": "Number of times to retry a failed broker request.",
-          "minimum": 0,
-          "default": 3
         }
       }
-    },
-
-    "state_dir": {
-      "type": "string",
-      "description": "Directory used as the base for agent state.",
-      "default": "/var/lib/certplane/agent"
     },
 
     "certificates": {
@@ -96,12 +112,22 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["profile", "key", "cert", "fullchain"],
+        "required": ["name", "profile", "dns_names", "key", "cert", "chain", "fullchain"],
         "additionalProperties": false,
         "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique name for this certificate entry."
+          },
           "profile": {
             "type": "string",
-            "description": "Name of the profile to request. Must be listed under this host in policy.yaml."
+            "description": "Name of the broker profile to request. Must be listed under this host in the policy."
+          },
+          "dns_names": {
+            "type": "array",
+            "description": "DNS names for this certificate.",
+            "minItems": 1,
+            "items": {"type": "string"}
           },
           "key": {
             "type": "string",
@@ -117,21 +143,21 @@
           },
           "fullchain": {
             "type": "string",
-            "description": "Path where the agent writes the full chain certificate and intermediates (PEM)."
+            "description": "Path where the agent writes the full chain (leaf + intermediates, PEM)."
           },
           "reload_command": {
             "type": "string",
             "description": "Shell command executed after the certificate is installed or renewed.",
-            "examples": [
-              "systemctl reload traefik",
-              "systemctl reload nginx",
-              "systemctl reload vault"
-            ]
+            "examples": ["systemctl reload traefik", "systemctl reload nginx"]
+          },
+          "reload_timeout": {
+            "type": "string",
+            "description": "Maximum time allowed for the reload command to complete.",
+            "default": "30s"
           },
           "renew_before": {
             "type": "string",
             "description": "Request a new certificate when less than this time remains before expiry.",
-            "examples": ["720h"],
             "default": "720h"
           }
         }
@@ -155,11 +181,13 @@
         },
         "format": {
           "type": "string",
-          "enum": ["json", "text"],
-          "default": "json"
+          "enum": ["text", "json"],
+          "default": "text"
         },
-        "file": {
-          "type": "string"
+        "destination": {
+          "type": "string",
+          "enum": ["stdout", "stderr"],
+          "default": "stderr"
         }
       }
     }

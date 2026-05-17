@@ -7,7 +7,7 @@ profiles:
       - "*.whisper.cl"
     acme:
       challenge: dns-01
-      credentials: CLOUDFLARE_DNS_API_TOKEN
+      credentials: cloudflare/whisper-cl
     renew_before: 720h
 
 hosts:
@@ -15,4 +15,3 @@ hosts:
     identity: pvvl-edge01.h.int.whisper.cl
     profiles:
       - public_edge_main
-

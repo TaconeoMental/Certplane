@@ -2,45 +2,72 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://certplane.whisper.cl/schemas/broker.schema.json",
   "title": "Certplane Broker Configuration",
-  "description": "Configuration file for certplane-broker",
   "type": "object",
-  "required": ["server", "policy", "identity_ca", "public_ca"],
+  "required": ["server", "policy", "issuer"],
   "additionalProperties": false,
   "properties": {
     "server": {
       "type": "object",
-      "required": ["address", "tls"],
+      "required": ["tls", "mtls"],
       "additionalProperties": false,
       "properties": {
         "address": {
           "type": "string",
           "description": "Address and port to listen on.",
+          "default": ":8443",
           "examples": ["0.0.0.0:8443"]
         },
         "tls": {
           "type": "object",
-          "required": ["cert", "key", "client_ca"],
+          "required": ["cert", "key"],
           "additionalProperties": false,
           "properties": {
             "cert": {
               "type": "string",
-              "description": "Path to the broker TLS server certificate (PEM) issued by the internal CA."
+              "description": "Path to the broker TLS server certificate (PEM)."
             },
             "key": {
               "type": "string",
               "description": "Path to the broker TLS server private key (PEM)."
             },
-            "client_ca": {
-              "type": "string",
-              "description": "Path to the internal root CA certificate (PEM). Used to validate agent identity certificates."
-            },
             "min_version": {
               "type": "string",
-              "description": "Minimum TLS version accepted.",
               "enum": ["1.2", "1.3"],
+              "description": "Minimum TLS version accepted.",
               "default": "1.2"
             }
           }
+        },
+        "mtls": {
+          "type": "object",
+          "required": ["agent_ca_bundle"],
+          "additionalProperties": false,
+          "properties": {
+            "agent_ca_bundle": {
+              "type": "string",
+              "description": "Path to the CA bundle used to verify agent identity certificates (PEM)."
+            }
+          }
+        },
+        "read_header_timeout": {
+          "type": "string",
+          "description": "Maximum time to read request headers.",
+          "default": "5s"
+        },
+        "read_timeout": {
+          "type": "string",
+          "description": "Maximum time to read an entire request.",
+          "default": "10s"
+        },
+        "write_timeout": {
+          "type": "string",
+          "description": "Maximum time to write a response.",
+          "default": "60s"
+        },
+        "idle_timeout": {
+          "type": "string",
+          "description": "Maximum time to keep an idle connection open.",
+          "default": "120s"
         }
       }
     },
@@ -52,181 +79,177 @@
       "properties": {
         "path": {
           "type": "string",
-          "description": "Path to the policy.yaml file."
+          "description": "Path to the policy YAML file."
         },
         "watch": {
           "type": "boolean",
-          "description": "If true, the broker reloads policy.yaml automatically when the file changes.",
+          "description": "Reload the policy file automatically when it changes on disk.",
           "default": false
         }
       }
     },
 
-    "identity_ca": {
+    "issuer": {
       "type": "object",
       "required": ["provider"],
       "additionalProperties": false,
       "properties": {
         "provider": {
           "type": "string",
-          "description": "Identity CA provider to use.",
-          "enum": ["step-ca"]
+          "enum": ["acme"],
+          "description": "Certificate issuer provider.",
+          "default": "acme"
         },
-        "step_ca": {
+        "acme": {
           "type": "object",
-          "description": "Configuration for the step-ca provider. Required when provider is step-ca.",
-          "required": ["url", "fingerprint"],
+          "description": "ACME provider configuration. Required when provider is acme.",
+          "required": ["directory_url", "account_email", "account_key", "dns_provider"],
           "additionalProperties": false,
           "properties": {
-            "url": {
+            "directory_url": {
               "type": "string",
-              "description": "URL of the step-ca API.",
-              "examples": ["https://ca.int.whisper.cl:9000"]
+              "description": "ACME directory URL.",
+              "examples": [
+                "https://acme-v02.api.letsencrypt.org/directory",
+                "https://acme-staging-v02.api.letsencrypt.org/directory"
+              ]
             },
-            "fingerprint": {
+            "account_email": {
               "type": "string",
-              "description": "SHA256 fingerprint of the step-ca root CA certificate."
+              "description": "Email address for the ACME account."
             },
-            "root_ca": {
+            "account_key": {
               "type": "string",
-              "description": "Path to the step-ca root CA certificate (PEM). Optional if fingerprint is provided."
+              "description": "Path to the ACME account private key (PEM)."
             },
-            "timeout": {
+            "dns_provider": {
               "type": "string",
-              "description": "Timeout for step-ca API calls. Go duration string.",
-              "examples": ["10s", "30s"],
-              "default": "10s"
+              "enum": ["cloudflare", "httpreq"],
+              "description": "DNS provider for dns-01 challenges."
+            },
+            "preferred_chain": {
+              "type": "string",
+              "description": "Preferred certificate chain name. Defaults to the CA's chain if unset."
             }
           }
         }
       }
     },
 
-    "public_ca": {
-      "type": "object",
-      "required": ["provider"],
-      "additionalProperties": false,
-      "properties": {
-        "provider": {
-          "type": "string",
-          "description": "Public CA provider to use.",
-          "enum": ["letsencrypt"]
-        },
-        "letsencrypt": {
-          "type": "object",
-          "description": "Configuration for the Let's Encrypt provider. Required when provider is letsencrypt.",
-          "required": ["email", "directory", "challenge"],
-          "additionalProperties": false,
-          "properties": {
-            "email": {
-              "type": "string",
-              "format": "email",
-              "description": "Email address for the ACME account."
-            },
-            "directory": {
-              "type": "string",
-              "description": "ACME directory to use.",
-              "enum": ["production", "staging"],
-              "default": "staging"
-            },
-            "challenge": {
-              "type": "string",
-              "description": "ACME challenge type.",
-              "enum": ["dns-01", "http-01"]
-            },
-            "dns": {
-              "type": "object",
-              "description": "DNS challenge configuration. Required when challenge is dns-01.",
-              "required": ["provider", "credentials"],
-              "additionalProperties": false,
-              "properties": {
-                "provider": {
-                  "type": "string",
-                  "description": "DNS provider for the dns-01 challenge.",
-                  "enum": ["cloudflare"]
-                },
-                "propagation_timeout": {
-                  "type": "string",
-                  "description": "Time to wait for DNS propagation before asking Let's Encrypt to verify.",
-                  "examples": ["60s", "120s"],
-                  "default": "120s"
-                },
-                "polling_interval": {
-                  "type": "string",
-                  "description": "Interval between DNS propagation checks.",
-                  "examples": ["10s"],
-                  "default": "10s"
-                },
-                "credentials": {
-                  "$ref": "#/$defs/secret_ref"
-                }
-              }
-            },
-            "http": {
-              "type": "object",
-              "description": "HTTP challenge configuration. Required when challenge is http-01.",
-              "additionalProperties": false,
-              "properties": {
-                "port": {
-                  "type": "integer",
-                  "description": "Port to listen on for the http-01 challenge.",
-                  "default": 80
-                }
-              }
-            },
-            "data_dir": {
-              "type": "string",
-              "description": "Directory where lego stores ACME account data and issued certificates.",
-              "default": "/var/lib/certplane/lego"
-            },
-            "renew_before": {
-              "type": "string",
-              "description": "If the broker has a cached certificate with less than this time remaining, it renews instead of returning the cached bundle.",
-              "examples": ["720h"],
-              "default": "720h"
-            }
-          }
-        }
-      }
-    },
     "secrets": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "provider": {
           "type": "string",
-          "description": "Secrets provider to use.",
-          "enum": ["file", "env", "vault"],
-          "default": "file"
+          "enum": ["env", "file", "vault", "openbao"],
+          "description": "Secrets provider used to resolve credentials referenced in profiles.",
+          "default": "env"
         },
         "vault": {
           "type": "object",
-          "description": "Vault provider configuration. Required when provider is vault.",
-          "required": ["address", "token_file"],
+          "description": "Vault/OpenBao provider configuration. Required when provider is vault or openbao.",
           "additionalProperties": false,
           "properties": {
             "address": {
               "type": "string",
-              "description": "URL of the Vault server.",
+              "description": "URL of the Vault or OpenBao server.",
               "examples": ["https://vault.int.whisper.cl:8200"]
+            },
+            "token": {
+              "type": "string",
+              "description": "Vault token. Use token_file in production."
             },
             "token_file": {
               "type": "string",
               "description": "Path to a file containing the Vault token."
+            },
+            "mount_path": {
+              "type": "string",
+              "description": "KV secrets engine mount path.",
+              "default": "secret"
+            },
+            "kv_version": {
+              "type": "integer",
+              "enum": [1, 2],
+              "description": "KV secrets engine version.",
+              "default": 2
+            },
+            "key": {
+              "type": "string",
+              "description": "Key within the secret to read.",
+              "default": "value"
+            },
+            "timeout": {
+              "type": "string",
+              "description": "Timeout for Vault API calls.",
+              "default": "10s"
+            },
+            "namespace": {
+              "type": "string",
+              "description": "Vault Enterprise namespace."
             }
           }
         }
       }
     },
 
-    "state": {
+    "store": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "driver": {
+          "type": "string",
+          "enum": ["sqlite", "file"],
+          "description": "Storage backend driver.",
+          "default": "sqlite"
+        },
         "path": {
           "type": "string",
-          "description": "Path to the SQLite database file used to store issuance state.",
+          "description": "Path to the store file (SQLite DB or JSON cache file).",
           "default": "/var/lib/certplane/broker.db"
+        }
+      }
+    },
+
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Set to false to disable audit logging.",
+          "default": true
+        },
+        "failure_mode": {
+          "type": "string",
+          "enum": ["fail_open", "fail_closed"],
+          "description": "fail_closed rejects the request on audit failure, fail_open allows it.",
+          "default": "fail_open"
+        },
+        "mirror_to_log": {
+          "type": "boolean",
+          "description": "Also emit audit events as structured log lines.",
+          "default": false
+        }
+      }
+    },
+
+    "rate_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "per_identity_per_hour": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum certificate requests per identity per hour. 0 disables the limit.",
+          "default": 50
+        },
+        "per_identity_profile_per_hour": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum certificate requests per identity+profile pair per hour. 0 disables the limit.",
+          "default": 20
         }
       }
     },
@@ -237,18 +260,6 @@
   },
 
   "$defs": {
-    "secret_ref": {
-      "type": "object",
-      "required": ["name"],
-      "additionalProperties": false,
-      "description": "Reference to a secret in the configured secrets provider.",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "The name or path of the secret. Interpreted by the active secrets provider: a file path for file provider, an env var name for env provider, a Vault path for vault provider."
-        }
-      }
-    },
     "logging": {
       "type": "object",
       "additionalProperties": false,
@@ -260,13 +271,13 @@
         },
         "format": {
           "type": "string",
-          "enum": ["json", "text"],
-          "description": "Log output format.",
+          "enum": ["text", "json"],
           "default": "json"
         },
-        "file": {
+        "destination": {
           "type": "string",
-          "description": "If set, logs are written to this file in addition to stdout."
+          "enum": ["stdout", "stderr"],
+          "default": "stdout"
         }
       }
     }

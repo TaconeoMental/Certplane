@@ -5,18 +5,19 @@ identity:
   provider: step-ca
   cert: /var/lib/certplane/agent/identity.crt
   key: /var/lib/certplane/agent/identity.key
-  issuer_ca_bundle: /var/lib/certplane/agent-ca.crt
+  issuer_ca_bundle: /etc/certplane/ca/agent-identity-ca-bundle.crt
   bootstrap_token: /etc/certplane/agent/bootstrap-token
   renew_before: 8h
   warn_before: 24h
   step_ca:
     url: https://ca.int.whisper.cl
-    fingerprint: "sha256-fingerprint"
+    fingerprint: "sha256:aabbcc..."
     root_ca_bundle: /etc/certplane/ca/step-ca-root.crt
+    timeout: 10s
 
 broker:
   url: https://certplane-broker.int.whisper.cl:8443
-  server_ca_bundle: dev/broker-ca.crt
+  server_ca_bundle: /etc/certplane/ca/broker-server-ca-bundle.crt
   timeout: 30s
 
 logging:
@@ -29,11 +30,10 @@ certificates:
     profile: public_edge_main
     dns_names:
       - "*.whisper.cl"
-    key:  /var/lib/certplane/agent/service.key
+    key: /var/lib/certplane/agent/service.key
     cert: /var/lib/certplane/agent/service.crt
     chain: /var/lib/certplane/agent/service.chain.crt
     fullchain: /var/lib/certplane/agent/service.fullchain.crt
     renew_before: 720h
-    reload_command: ""
+    reload_command: "systemctl reload traefik"
     reload_timeout: 30s
-

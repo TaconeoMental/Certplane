@@ -3,44 +3,55 @@
   "$id": "https://certplane.whisper.cl/schemas/policy.schema.json",
   "title": "Certplane Policy",
   "type": "object",
-  "required": ["hosts", "profiles"],
+  "required": ["profiles", "hosts"],
   "additionalProperties": false,
   "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [1],
+      "description": "Policy schema version. Only version 1 is supported.",
+      "default": 1
+    },
+
     "profiles": {
       "type": "object",
-      "description": "Named certificate policies. Keys are profile names referenced by hosts and agents.",
+      "description": "Named certificate profiles. Keys are profile names referenced by hosts and agents.",
       "minProperties": 1,
       "additionalProperties": {
         "type": "object",
-        "required": ["cert_type", "dns_names", "acme_challenge"],
+        "required": ["type", "dns_names", "acme"],
         "additionalProperties": false,
         "properties": {
-          "cert_type": {
+          "type": {
             "type": "string",
-            "description": "wildcard issues a *.domain.com certificate. multi issues a certificate with explicit SANs.",
-            "enum": ["wildcard", "multi"]
+            "enum": ["wildcard", "multi_san"],
+            "description": "wildcard issues a *.domain.com certificate and requires dns-01. multi_san issues a certificate with explicit SANs."
           },
           "dns_names": {
             "type": "array",
-            "description": "DNS names for this certificate.",
+            "description": "Allowed DNS names for this profile.",
             "minItems": 1,
-            "items": {
-              "type": "string"
-            },
+            "items": {"type": "string"},
             "examples": [
               ["*.whisper.cl"],
               ["api.whisper.cl", "api-v2.whisper.cl"]
             ]
           },
-          "acme_challenge": {
-            "type": "string",
-            "description": "ACME challenge type for this profile.",
-            "enum": ["dns-01", "http-01"]
-          },
-          "ttl": {
-            "type": "string",
-            "description": "Requested certificate TTL. (If the broker is using Let's Encrypt as provider, this value is ignored).",
-            "default": "2160h"
+          "acme": {
+            "type": "object",
+            "required": ["challenge"],
+            "additionalProperties": false,
+            "properties": {
+              "challenge": {
+                "type": "string",
+                "enum": ["dns-01", "http-01"],
+                "description": "ACME challenge type. Wildcard profiles require dns-01."
+              },
+              "credentials": {
+                "type": "string",
+                "description": "Secret reference resolved by the configured secrets provider. Required for dns-01."
+              }
+            }
           },
           "renew_before": {
             "type": "string",
@@ -53,7 +64,7 @@
 
     "hosts": {
       "type": "object",
-      "description": "Registered hosts. Keys are host identifiers used for human reference only.",
+      "description": "Registered hosts. Keys are human-readable host labels.",
       "minProperties": 1,
       "additionalProperties": {
         "type": "object",
@@ -62,16 +73,14 @@
         "properties": {
           "identity": {
             "type": "string",
-            "description": "The CN of this host's identity certificate as issued by step-ca.",
-            "examples": ["lvvl-edge01.h.int.whisper.cl"]
+            "description": "The Common Name of this host's identity certificate as issued by step-ca.",
+            "examples": ["pvvl-edge01.h.int.whisper.cl"]
           },
           "profiles": {
             "type": "array",
-            "description": "List of profiles this host is allowed to request. Any profile not listed here will be rejected by the broker regardless of what the agent sends.",
+            "description": "Profiles this host is allowed to request. Requests for any other profile are rejected.",
             "minItems": 1,
-            "items": {
-              "type": "string"
-            }
+            "items": {"type": "string"}
           }
         }
       }
