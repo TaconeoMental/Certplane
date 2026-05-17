@@ -1,0 +1,47 @@
+---
+certplane_broker_user: certplane
+certplane_broker_group: certplane
+
+certplane_broker_binary_dest: /usr/local/bin/certplane-broker
+certplane_broker_config_dir: /etc/certplane
+certplane_broker_state_dir: /var/lib/certplane
+
+# Server
+certplane_broker_listen: ":8443"
+certplane_broker_tls_min_version: "1.2"
+certplane_broker_read_header_timeout: 5s
+certplane_broker_read_timeout: 10s
+certplane_broker_write_timeout: 60s
+certplane_broker_idle_timeout: 120s
+
+# Policy
+certplane_broker_policy_path: /etc/certplane/policy.yml
+certplane_broker_policy_watch: false
+
+# Issuer
+certplane_broker_acme_preferred_chain: ""
+
+# Secrets
+certplane_broker_secrets_provider: env
+certplane_broker_vault_mount_path: secret
+certplane_broker_vault_kv_version: 2
+certplane_broker_vault_key: value
+certplane_broker_vault_timeout: 10s
+
+# Store
+certplane_broker_store_driver: sqlite
+certplane_broker_store_path: /var/lib/certplane/broker.db
+
+# Audit
+certplane_broker_audit_enabled: true
+certplane_broker_audit_failure_mode: fail_open
+certplane_broker_audit_mirror_to_log: false
+
+# Rate limits
+certplane_broker_rate_limit_per_identity_per_hour: 50
+certplane_broker_rate_limit_per_identity_profile_per_hour: 20
+
+# Logging
+certplane_broker_log_level: info
+certplane_broker_log_format: json
+certplane_broker_log_destination: stdout

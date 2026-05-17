@@ -1,0 +1,66 @@
+# Managed by Ansible - do not edit manually
+server:
+  address: "{{ certplane_broker_listen }}"
+  tls:
+    cert: {{ certplane_broker_config_dir }}/tls/broker.crt
+    key: {{ certplane_broker_config_dir }}/tls/broker.key
+    min_version: "{{ certplane_broker_tls_min_version }}"
+  mtls:
+    agent_ca_bundle: {{ certplane_broker_config_dir }}/ca/agent-identity-ca-bundle.crt
+  read_header_timeout: {{ certplane_broker_read_header_timeout }}
+  read_timeout: {{ certplane_broker_read_timeout }}
+  write_timeout: {{ certplane_broker_write_timeout }}
+  idle_timeout: {{ certplane_broker_idle_timeout }}
+
+policy:
+  path: {{ certplane_broker_policy_path }}
+  watch: {{ certplane_broker_policy_watch | lower }}
+
+issuer:
+  provider: acme
+  acme:
+    directory_url: {{ certplane_broker_acme_directory_url }}
+    account_email: {{ certplane_broker_acme_account_email }}
+    account_key: {{ certplane_broker_state_dir }}/acme/account.key
+    dns_provider: {{ certplane_broker_acme_dns_provider }}
+{% if certplane_broker_acme_preferred_chain %}
+    preferred_chain: {{ certplane_broker_acme_preferred_chain }}
+{% endif %}
+
+secrets:
+  provider: {{ certplane_broker_secrets_provider }}
+{% if certplane_broker_secrets_provider in ['vault', 'openbao'] %}
+  vault:
+    address: {{ certplane_broker_vault_address }}
+{% if certplane_broker_vault_token | default('') %}
+    token: {{ certplane_broker_vault_token }}
+{% endif %}
+{% if certplane_broker_vault_token_file | default('') %}
+    token_file: {{ certplane_broker_vault_token_file }}
+{% endif %}
+    mount_path: {{ certplane_broker_vault_mount_path }}
+    kv_version: {{ certplane_broker_vault_kv_version }}
+    key: {{ certplane_broker_vault_key }}
+    timeout: {{ certplane_broker_vault_timeout }}
+{% if certplane_broker_vault_namespace | default('') %}
+    namespace: {{ certplane_broker_vault_namespace }}
+{% endif %}
+{% endif %}
+
+store:
+  driver: {{ certplane_broker_store_driver }}
+  path: {{ certplane_broker_store_path }}
+
+audit:
+  enabled: {{ certplane_broker_audit_enabled | lower }}
+  failure_mode: {{ certplane_broker_audit_failure_mode }}
+  mirror_to_log: {{ certplane_broker_audit_mirror_to_log | lower }}
+
+rate_limits:
+  per_identity_per_hour: {{ certplane_broker_rate_limit_per_identity_per_hour }}
+  per_identity_profile_per_hour: {{ certplane_broker_rate_limit_per_identity_profile_per_hour }}
+
+logging:
+  level: {{ certplane_broker_log_level }}
+  format: {{ certplane_broker_log_format }}
+  destination: {{ certplane_broker_log_destination }}
