@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  role_name: certplane_agent
+  author: TaconeoMental
+  description: Deploy and configure certplane-agent
+  min_ansible_version: "2.12"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+
+dependencies: []

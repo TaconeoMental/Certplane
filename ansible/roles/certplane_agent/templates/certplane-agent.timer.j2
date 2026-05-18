@@ -1,0 +1,11 @@
+[Unit]
+Description=certplane agent renewal timer
+
+[Timer]
+OnBootSec={{ certplane_agent_timer_on_boot_sec }}
+OnUnitActiveSec={{ certplane_agent_timer_on_active_sec }}
+RandomizedDelaySec={{ certplane_agent_timer_randomized_delay }}
+Unit=certplane-agent.service
+
+[Install]
+WantedBy=timers.target

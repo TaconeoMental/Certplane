@@ -1,0 +1,52 @@
+# Managed by Ansible - do not edit manually
+state_dir: {{ certplane_agent_state_dir }}
+
+identity:
+  name: {{ certplane_agent_identity_name }}
+  provider: step-ca
+  cert: {{ certplane_agent_identity_cert }}
+  key: {{ certplane_agent_identity_key }}
+  issuer_ca_bundle: {{ certplane_agent_config_dir }}/ca/agent-identity-ca-bundle.crt
+{% if certplane_agent_bootstrap_token is defined %}
+  bootstrap_token: {{ certplane_agent_bootstrap_token_path }}
+{% endif %}
+  renew_before: {{ certplane_agent_identity_renew_before }}
+  warn_before: {{ certplane_agent_identity_warn_before }}
+  step_ca:
+    url: {{ certplane_agent_step_ca_url }}
+{% if certplane_agent_step_ca_fingerprint | default('') %}
+    fingerprint: "{{ certplane_agent_step_ca_fingerprint }}"
+{% endif %}
+{% if certplane_agent_step_ca_root_ca_bundle_src is defined %}
+    root_ca_bundle: {{ certplane_agent_config_dir }}/ca/step-ca-root.crt
+{% endif %}
+    timeout: {{ certplane_agent_step_ca_timeout }}
+
+broker:
+  url: {{ certplane_agent_broker_url }}
+  server_ca_bundle: {{ certplane_agent_config_dir }}/ca/broker-server-ca-bundle.crt
+  timeout: {{ certplane_agent_broker_timeout }}
+
+logging:
+  level: {{ certplane_agent_log_level }}
+  format: {{ certplane_agent_log_format }}
+  destination: {{ certplane_agent_log_destination }}
+
+certificates:
+{% for cert in certplane_agent_certificates %}
+  - name: {{ cert.name }}
+    profile: {{ cert.profile }}
+    dns_names:
+{% for name in cert.dns_names %}
+      - "{{ name }}"
+{% endfor %}
+    key: {{ cert.key }}
+    cert: {{ cert.cert }}
+    chain: {{ cert.chain }}
+    fullchain: {{ cert.fullchain }}
+{% if cert.reload_command | default('') %}
+    reload_command: "{{ cert.reload_command }}"
+    reload_timeout: {{ cert.reload_timeout | default('30s') }}
+{% endif %}
+    renew_before: {{ cert.renew_before | default('720h') }}
+{% endfor %}

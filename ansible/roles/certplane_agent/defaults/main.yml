@@ -1,0 +1,32 @@
+---
+certplane_agent_user: certplane
+certplane_agent_group: certplane
+
+certplane_agent_binary_dest: /usr/local/bin/certplane-agent
+certplane_agent_config_dir: /etc/certplane
+certplane_agent_state_dir: /var/lib/certplane/agent
+
+# Identity
+certplane_agent_identity_cert: /var/lib/certplane/agent/identity.crt
+certplane_agent_identity_key: /var/lib/certplane/agent/identity.key
+certplane_agent_identity_renew_before: 8h
+certplane_agent_identity_warn_before: 24h
+
+# step-ca
+certplane_agent_step_ca_timeout: 10s
+
+# Broker
+certplane_agent_broker_timeout: 30s
+
+# Bootstrap
+certplane_agent_bootstrap_token_path: /etc/certplane/bootstrap-token
+
+# Timer
+certplane_agent_timer_on_boot_sec: 1min
+certplane_agent_timer_on_active_sec: 6h
+certplane_agent_timer_randomized_delay: 5min
+
+# Logging
+certplane_agent_log_level: info
+certplane_agent_log_format: text
+certplane_agent_log_destination: stderr

@@ -1,0 +1,10 @@
+[Unit]
+Description=certplane agent run
+After=network.target
+
+[Service]
+Type=oneshot
+User={{ certplane_agent_user }}
+Group={{ certplane_agent_group }}
+ExecStartPre={{ certplane_agent_binary_dest }} -c {{ certplane_agent_config_dir }}/agent.yml check
+ExecStart={{ certplane_agent_binary_dest }} -c {{ certplane_agent_config_dir }}/agent.yml run
