@@ -1,0 +1,22 @@
+---
+- name: create certplane group
+  ansible.builtin.group:
+    name: "{{ certplane_agent_group }}"
+    system: true
+
+- name: create certplane user
+  ansible.builtin.user:
+    name: "{{ certplane_agent_user }}"
+    group: "{{ certplane_agent_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ certplane_agent_state_dir }}"
+    create_home: false
+
+- name: install certplane-agent binary
+  ansible.builtin.copy:
+    src: "{{ certplane_agent_binary }}"
+    dest: "{{ certplane_agent_binary_dest }}"
+    owner: root
+    group: root
+    mode: "0755"

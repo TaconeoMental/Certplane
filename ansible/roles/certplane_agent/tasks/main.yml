@@ -1,0 +1,5 @@
+---
+- ansible.builtin.import_tasks: install.yml
+- ansible.builtin.import_tasks: configure.yml
+- ansible.builtin.import_tasks: enroll.yml
+- ansible.builtin.import_tasks: service.yml
