@@ -1,0 +1,6 @@
+---
+- name: reload certplane-agent timer
+  ansible.builtin.systemd:
+    name: certplane-agent.timer
+    state: restarted
+    daemon_reload: true

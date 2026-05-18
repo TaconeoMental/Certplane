@@ -1,0 +1,25 @@
+---
+- name: deploy systemd service unit
+  ansible.builtin.template:
+    src: certplane-agent.service.j2
+    dest: /etc/systemd/system/certplane-agent.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload certplane-agent timer
+
+- name: deploy systemd timer unit
+  ansible.builtin.template:
+    src: certplane-agent.timer.j2
+    dest: /etc/systemd/system/certplane-agent.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload certplane-agent timer
+
+- name: enable and start certplane-agent timer
+  ansible.builtin.systemd:
+    name: certplane-agent.timer
+    enabled: true
+    state: started
+    daemon_reload: true

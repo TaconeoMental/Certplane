@@ -1,0 +1,26 @@
+---
+- name: check if identity cert exists
+  ansible.builtin.stat:
+    path: "{{ certplane_agent_identity_cert }}"
+  register: _certplane_identity_cert
+
+- name: deploy bootstrap token
+  ansible.builtin.copy:
+    content: "{{ certplane_agent_bootstrap_token }}"
+    dest: "{{ certplane_agent_bootstrap_token_path }}"
+    owner: "{{ certplane_agent_user }}"
+    group: "{{ certplane_agent_group }}"
+    mode: "0600"
+  when:
+    - certplane_agent_bootstrap_token is defined
+    - not _certplane_identity_cert.stat.exists
+  no_log: true
+
+- name: enroll agent
+  ansible.builtin.command: >
+    {{ certplane_agent_binary_dest }} -c {{ certplane_agent_config_dir }}/agent.yml enroll
+  become: true
+  become_user: "{{ certplane_agent_user }}"
+  when:
+    - certplane_agent_bootstrap_token is defined
+    - not _certplane_identity_cert.stat.exists
