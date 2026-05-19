@@ -130,6 +130,47 @@
             "preferred_chain": {
               "type": "string",
               "description": "Preferred certificate chain name. Defaults to the CA's chain if unset."
+            },
+            "httpreq": {
+              "type": "object",
+              "description": "httpreq DNS provider configuration. Required when dns_provider is httpreq.",
+              "additionalProperties": false,
+              "properties": {
+                "endpoint": {
+                  "type": "string",
+                  "description": "Base URL of the httpreq server (POST /present and POST /cleanup).",
+                  "examples": ["http://httpreq-bridge:8080"]
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": ["", "RAW"],
+                  "description": "lego httpreq mode. Empty string uses default mode (fqdn+value). RAW sends domain+token+keyAuth.",
+                  "default": ""
+                },
+                "username_secret": {
+                  "type": "string",
+                  "description": "Secret name for HTTP Basic Auth username. Resolved via the configured secrets provider."
+                },
+                "password_secret": {
+                  "type": "string",
+                  "description": "Secret name for HTTP Basic Auth password. Resolved via the configured secrets provider."
+                },
+                "propagation_timeout": {
+                  "type": "string",
+                  "description": "Maximum time to wait for DNS propagation.",
+                  "default": "30s"
+                },
+                "polling_interval": {
+                  "type": "string",
+                  "description": "Interval between DNS propagation checks.",
+                  "default": "2s"
+                },
+                "http_timeout": {
+                  "type": "string",
+                  "description": "Timeout for HTTP calls to the httpreq server.",
+                  "default": "10s"
+                }
+              }
             }
           }
         }

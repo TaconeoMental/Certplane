@@ -9,13 +9,17 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-acme/lego/v4/certcrypto"
 	"github.com/go-acme/lego/v4/certificate"
 	lego "github.com/go-acme/lego/v4/lego"
 	"github.com/go-acme/lego/v4/providers/dns/cloudflare"
+	"github.com/go-acme/lego/v4/providers/dns/httpreq"
 	"github.com/go-acme/lego/v4/registration"
 
 	"github.com/TaconeoMental/certplane/internal/broker/issuer"
@@ -30,6 +34,17 @@ type Config struct {
 	AccountKey     string
 	DNSProvider    string
 	PreferredChain string
+	HTTPReq        HTTPReqConfig
+}
+
+type HTTPReqConfig struct {
+	Endpoint           string
+	Mode               string
+	UsernameSecret     string
+	PasswordSecret     string
+	PropagationTimeout time.Duration
+	PollingInterval    time.Duration
+	HTTPTimeout        time.Duration
 }
 
 type Issuer struct {
@@ -181,9 +196,58 @@ func (i *Issuer) configureDNSProvider(ctx context.Context, client *lego.Client, 
 		}
 		return client.Challenge.SetDNS01Provider(provider)
 
+	case "httpreq":
+		provider, err := i.httpreqProvider(ctx)
+		if err != nil {
+			return err
+		}
+		return client.Challenge.SetDNS01Provider(provider)
+
 	default:
 		return fmt.Errorf("unsupported ACME DNS provider %q", i.cfg.DNSProvider)
 	}
+}
+
+func (i *Issuer) httpreqProvider(ctx context.Context) (*httpreq.DNSProvider, error) {
+	endpoint, err := url.Parse(i.cfg.HTTPReq.Endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("parsing httpreq endpoint %q: %w", i.cfg.HTTPReq.Endpoint, err)
+	}
+
+	cfg := httpreq.NewDefaultConfig()
+	cfg.Endpoint = endpoint
+	cfg.Mode = i.cfg.HTTPReq.Mode
+	cfg.PropagationTimeout = i.cfg.HTTPReq.PropagationTimeout
+	cfg.PollingInterval = i.cfg.HTTPReq.PollingInterval
+	cfg.HTTPClient = &http.Client{Timeout: i.cfg.HTTPReq.HTTPTimeout}
+
+	if i.cfg.HTTPReq.UsernameSecret != "" {
+		if i.secrets == nil {
+			return nil, fmt.Errorf("secrets provider is required for httpreq username")
+		}
+		username, err := i.secrets.Get(ctx, i.cfg.HTTPReq.UsernameSecret)
+		if err != nil {
+			return nil, fmt.Errorf("resolving httpreq username secret %q: %w", i.cfg.HTTPReq.UsernameSecret, err)
+		}
+		cfg.Username = username
+	}
+
+	if i.cfg.HTTPReq.PasswordSecret != "" {
+		if i.secrets == nil {
+			return nil, fmt.Errorf("secrets provider is required for httpreq password")
+		}
+		password, err := i.secrets.Get(ctx, i.cfg.HTTPReq.PasswordSecret)
+		if err != nil {
+			return nil, fmt.Errorf("resolving httpreq password secret %q: %w", i.cfg.HTTPReq.PasswordSecret, err)
+		}
+		cfg.Password = password
+	}
+
+	provider, err := httpreq.NewDNSProviderConfig(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("creating httpreq DNS provider: %w", err)
+	}
+	return provider, nil
 }
 
 func loadOrCreateAccountKey(path string) (crypto.PrivateKey, error) {

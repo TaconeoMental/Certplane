@@ -93,6 +93,15 @@ func buildIssuer(cfg *config.BrokerConfig, secretProvider secrets.Provider) (iss
 			AccountKey:     cfg.Issuer.ACME.AccountKey,
 			DNSProvider:    cfg.Issuer.ACME.DNSProvider,
 			PreferredChain: cfg.Issuer.ACME.PreferredChain,
+			HTTPReq: acmeissuer.HTTPReqConfig{
+				Endpoint:           cfg.Issuer.ACME.HTTPReq.Endpoint,
+				Mode:               cfg.Issuer.ACME.HTTPReq.Mode,
+				UsernameSecret:     cfg.Issuer.ACME.HTTPReq.UsernameSecret,
+				PasswordSecret:     cfg.Issuer.ACME.HTTPReq.PasswordSecret,
+				PropagationTimeout: cfg.Issuer.ACME.HTTPReq.PropagationTimeout,
+				PollingInterval:    cfg.Issuer.ACME.HTTPReq.PollingInterval,
+				HTTPTimeout:        cfg.Issuer.ACME.HTTPReq.HTTPTimeout,
+			},
 		}, secretProvider)
 	default:
 		return nil, fmt.Errorf("unknown issuer provider %q", cfg.Issuer.Provider)
