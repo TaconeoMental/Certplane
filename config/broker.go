@@ -49,11 +49,22 @@ type IssuerConfig struct {
 }
 
 type ACMEConfig struct {
-	DirectoryURL   string `yaml:"directory_url"`
-	AccountEmail   string `yaml:"account_email"`
-	AccountKey     string `yaml:"account_key"`
-	DNSProvider    string `yaml:"dns_provider"`
-	PreferredChain string `yaml:"preferred_chain"`
+	DirectoryURL   string            `yaml:"directory_url"`
+	AccountEmail   string            `yaml:"account_email"`
+	AccountKey     string            `yaml:"account_key"`
+	DNSProvider    string            `yaml:"dns_provider"`
+	PreferredChain string            `yaml:"preferred_chain"`
+	HTTPReq        HTTPReqACMEConfig `yaml:"httpreq"`
+}
+
+type HTTPReqACMEConfig struct {
+	Endpoint           string        `yaml:"endpoint"`
+	Mode               string        `yaml:"mode"`
+	UsernameSecret     string        `yaml:"username_secret"`
+	PasswordSecret     string        `yaml:"password_secret"`
+	PropagationTimeout time.Duration `yaml:"propagation_timeout"`
+	PollingInterval    time.Duration `yaml:"polling_interval"`
+	HTTPTimeout        time.Duration `yaml:"http_timeout"`
 }
 
 type SecretsConfig struct {
@@ -118,6 +129,15 @@ func (c *BrokerConfig) ApplyDefaults() {
 	}
 	if c.Issuer.Provider == "" {
 		c.Issuer.Provider = "acme"
+	}
+	if c.Issuer.ACME.HTTPReq.PropagationTimeout == 0 {
+		c.Issuer.ACME.HTTPReq.PropagationTimeout = 30 * time.Second
+	}
+	if c.Issuer.ACME.HTTPReq.PollingInterval == 0 {
+		c.Issuer.ACME.HTTPReq.PollingInterval = 2 * time.Second
+	}
+	if c.Issuer.ACME.HTTPReq.HTTPTimeout == 0 {
+		c.Issuer.ACME.HTTPReq.HTTPTimeout = 10 * time.Second
 	}
 	if c.RateLimits.PerIdentityPerHour == 0 {
 		c.RateLimits.PerIdentityPerHour = 50
@@ -187,6 +207,23 @@ func (c *BrokerConfig) Validate() error {
 		}
 		if c.Issuer.ACME.DNSProvider == "" {
 			errs = append(errs, fmt.Errorf("issuer.acme.dns_provider is required for acme issuer"))
+		}
+		switch c.Issuer.ACME.DNSProvider {
+		case "cloudflare":
+		case "httpreq":
+			if c.Issuer.ACME.HTTPReq.Endpoint == "" {
+				errs = append(errs, fmt.Errorf("issuer.acme.httpreq.endpoint is required when dns_provider is httpreq"))
+			} else if _, err := url.ParseRequestURI(c.Issuer.ACME.HTTPReq.Endpoint); err != nil {
+				errs = append(errs, fmt.Errorf("issuer.acme.httpreq.endpoint is invalid: %w", err))
+			}
+			if c.Issuer.ACME.HTTPReq.Mode != "" && c.Issuer.ACME.HTTPReq.Mode != "RAW" {
+				errs = append(errs, fmt.Errorf("issuer.acme.httpreq.mode must be empty or RAW"))
+			}
+			if c.Issuer.ACME.HTTPReq.PropagationTimeout <= 0 || c.Issuer.ACME.HTTPReq.PollingInterval <= 0 || c.Issuer.ACME.HTTPReq.HTTPTimeout <= 0 {
+				errs = append(errs, fmt.Errorf("issuer.acme.httpreq timeouts must be positive"))
+			}
+		default:
+			errs = append(errs, fmt.Errorf("issuer.acme.dns_provider must be cloudflare or httpreq"))
 		}
 	default:
 		errs = append(errs, fmt.Errorf("issuer.provider must be acme"))
