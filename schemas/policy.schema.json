@@ -49,7 +49,7 @@
               },
               "credentials": {
                 "type": "string",
-                "description": "Secret reference resolved by the configured secrets provider. Required for dns-01."
+                "description": "Secret name resolved by the configured secrets provider."
               }
             }
           },

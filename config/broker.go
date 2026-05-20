@@ -58,13 +58,14 @@ type ACMEConfig struct {
 }
 
 type HTTPReqACMEConfig struct {
-	Endpoint           string        `yaml:"endpoint"`
-	Mode               string        `yaml:"mode"`
-	UsernameSecret     string        `yaml:"username_secret"`
-	PasswordSecret     string        `yaml:"password_secret"`
-	PropagationTimeout time.Duration `yaml:"propagation_timeout"`
-	PollingInterval    time.Duration `yaml:"polling_interval"`
-	HTTPTimeout        time.Duration `yaml:"http_timeout"`
+	Endpoint             string        `yaml:"endpoint"`
+	Mode                 string        `yaml:"mode"`
+	UsernameSecret       string        `yaml:"username_secret"`
+	PasswordSecret       string        `yaml:"password_secret"`
+	PropagationTimeout   time.Duration `yaml:"propagation_timeout"`
+	PollingInterval      time.Duration `yaml:"polling_interval"`
+	HTTPTimeout          time.Duration `yaml:"http_timeout"`
+	RecursiveNameservers []string      `yaml:"recursive_nameservers"`
 }
 
 type SecretsConfig struct {

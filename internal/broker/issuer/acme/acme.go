@@ -17,6 +17,7 @@ import (
 
 	"github.com/go-acme/lego/v4/certcrypto"
 	"github.com/go-acme/lego/v4/certificate"
+	"github.com/go-acme/lego/v4/challenge/dns01"
 	lego "github.com/go-acme/lego/v4/lego"
 	"github.com/go-acme/lego/v4/providers/dns/cloudflare"
 	"github.com/go-acme/lego/v4/providers/dns/httpreq"
@@ -38,13 +39,14 @@ type Config struct {
 }
 
 type HTTPReqConfig struct {
-	Endpoint           string
-	Mode               string
-	UsernameSecret     string
-	PasswordSecret     string
-	PropagationTimeout time.Duration
-	PollingInterval    time.Duration
-	HTTPTimeout        time.Duration
+	Endpoint             string
+	Mode                 string
+	UsernameSecret       string
+	PasswordSecret       string
+	PropagationTimeout   time.Duration
+	PollingInterval      time.Duration
+	HTTPTimeout          time.Duration
+	RecursiveNameservers []string
 }
 
 type Issuer struct {
@@ -201,7 +203,21 @@ func (i *Issuer) configureDNSProvider(ctx context.Context, client *lego.Client, 
 		if err != nil {
 			return err
 		}
-		return client.Challenge.SetDNS01Provider(provider)
+		opts := []dns01.ChallengeOption{}
+		if len(i.cfg.HTTPReq.RecursiveNameservers) > 0 {
+			// lego's default propagation looks for the authoritative NS via
+			// SOA queries. Servers like pebble-challtestsrv (which I use in
+			// lab enviroments) return NOTIMP for SOA, breaking that process.
+			// When the operator provides explicit nameservers, we bypass the
+			// authoritative lookup and check TXT propagation directly at those
+			// servers.
+			opts = append(opts,
+				dns01.AddRecursiveNameservers(i.cfg.HTTPReq.RecursiveNameservers),
+				dns01.RecursiveNSsPropagationRequirement(),
+				dns01.DisableAuthoritativeNssPropagationRequirement(),
+			)
+		}
+		return client.Challenge.SetDNS01Provider(provider, opts...)
 
 	default:
 		return fmt.Errorf("unsupported ACME DNS provider %q", i.cfg.DNSProvider)

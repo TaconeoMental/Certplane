@@ -169,6 +169,12 @@
                   "type": "string",
                   "description": "Timeout for HTTP calls to the httpreq server.",
                   "default": "10s"
+                },
+                "recursive_nameservers": {
+                  "type": "array",
+                  "items": {"type": "string"},
+                  "description": "DNS nameservers used by lego's client-side propagation check.",
+                  "examples": [["challtestsrv:8053"]]
                 }
               }
             }

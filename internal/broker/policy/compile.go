@@ -120,9 +120,6 @@ func validateProfileType(profileType string, dnsNames []string, acme CompiledACM
 	if acme.Challenge == "" {
 		return fmt.Errorf("acme.challenge is required")
 	}
-	if acme.Challenge == "dns-01" && acme.Credentials == "" {
-		return fmt.Errorf("acme.credentials is required for dns-01")
-	}
 
 	switch profileType {
 	case "wildcard":

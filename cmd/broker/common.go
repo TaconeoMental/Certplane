@@ -94,13 +94,14 @@ func buildIssuer(cfg *config.BrokerConfig, secretProvider secrets.Provider) (iss
 			DNSProvider:    cfg.Issuer.ACME.DNSProvider,
 			PreferredChain: cfg.Issuer.ACME.PreferredChain,
 			HTTPReq: acmeissuer.HTTPReqConfig{
-				Endpoint:           cfg.Issuer.ACME.HTTPReq.Endpoint,
-				Mode:               cfg.Issuer.ACME.HTTPReq.Mode,
-				UsernameSecret:     cfg.Issuer.ACME.HTTPReq.UsernameSecret,
-				PasswordSecret:     cfg.Issuer.ACME.HTTPReq.PasswordSecret,
-				PropagationTimeout: cfg.Issuer.ACME.HTTPReq.PropagationTimeout,
-				PollingInterval:    cfg.Issuer.ACME.HTTPReq.PollingInterval,
-				HTTPTimeout:        cfg.Issuer.ACME.HTTPReq.HTTPTimeout,
+				Endpoint:             cfg.Issuer.ACME.HTTPReq.Endpoint,
+				Mode:                 cfg.Issuer.ACME.HTTPReq.Mode,
+				UsernameSecret:       cfg.Issuer.ACME.HTTPReq.UsernameSecret,
+				PasswordSecret:       cfg.Issuer.ACME.HTTPReq.PasswordSecret,
+				PropagationTimeout:   cfg.Issuer.ACME.HTTPReq.PropagationTimeout,
+				PollingInterval:      cfg.Issuer.ACME.HTTPReq.PollingInterval,
+				HTTPTimeout:          cfg.Issuer.ACME.HTTPReq.HTTPTimeout,
+				RecursiveNameservers: cfg.Issuer.ACME.HTTPReq.RecursiveNameservers,
 			},
 		}, secretProvider)
 	default:
