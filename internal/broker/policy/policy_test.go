@@ -27,7 +27,10 @@ func testPolicy(t *testing.T) *CompiledPolicy {
 
 func TestAuthorizeExactSANMatch(t *testing.T) {
 	pol := testPolicy(t)
-	key, _ := pki.GenerateECDSAKey()
+	key, err := pki.GenerateECDSAKey()
+	if err != nil {
+		t.Fatal(err)
+	}
 	csrPEM, err := pki.GenerateServiceCSR(key, []string{"*.WHISPER.CL."})
 	if err != nil {
 		t.Fatal(err)
@@ -43,9 +46,18 @@ func TestAuthorizeExactSANMatch(t *testing.T) {
 
 func TestAuthorizeRejectsSuperset(t *testing.T) {
 	pol := testPolicy(t)
-	key, _ := pki.GenerateECDSAKey()
-	csrPEM, _ := pki.GenerateServiceCSR(key, []string{"api.whisper.cl", "api-v2.whisper.cl", "extra.whisper.cl"})
-	csr, _ := pki.ParseCSRPEM(csrPEM)
+	key, err := pki.GenerateECDSAKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	csrPEM, err := pki.GenerateServiceCSR(key, []string{"api.whisper.cl", "api-v2.whisper.cl", "extra.whisper.cl"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	csr, err := pki.ParseCSRPEM(csrPEM)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if _, err := pol.Authorize("api01", "api", csr); err == nil {
 		t.Fatal("expected mismatch")
 	}
