@@ -138,6 +138,9 @@ func validateProfileType(profileType string, dnsNames []string, acme CompiledACM
 				return fmt.Errorf("multi_san profile contains wildcard name %q", name)
 			}
 		}
+		if acme.Challenge != "dns-01" {
+			return fmt.Errorf("multi_san profiles require acme.challenge dns-01")
+		}
 
 	default:
 		return fmt.Errorf("unsupported profile type %q", profileType)

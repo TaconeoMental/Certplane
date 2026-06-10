@@ -51,6 +51,21 @@ func TestAuthorizeRejectsSuperset(t *testing.T) {
 	}
 }
 
+func TestMultiSANRejectsNonDNS01Challenge(t *testing.T) {
+	_, err := Compile(Config{
+		Version: 1,
+		Profiles: map[string]Profile{
+			"api": {Type: "multi_san", DNSNames: []string{"api.whisper.cl"}, ACME: ACMEProfile{Challenge: "http-01", Credentials: "cf"}},
+		},
+		Hosts: map[string]Host{
+			"api01": {Identity: "api01", Profiles: []string{"api"}},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error for multi_san with http-01 challenge")
+	}
+}
+
 func TestDuplicateIdentityRejected(t *testing.T) {
 	_, err := Compile(Config{
 		Version:  1,
