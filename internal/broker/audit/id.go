@@ -2,6 +2,7 @@ package audit
 
 import (
 	"crypto/rand"
+	"fmt"
 	"strings"
 	"time"
 
@@ -9,11 +10,10 @@ import (
 )
 
 // Returns a random identifier for audit/request correlation
-func NewID(prefix string) string {
+func NewID(prefix string) (string, error) {
 	id, err := ulid.New(ulid.Timestamp(time.Now().UTC()), rand.Reader)
 	if err != nil {
-		panic("generate audit id: " + err.Error())
+		return "", fmt.Errorf("generate audit id: %w", err)
 	}
-
-	return prefix + strings.ToLower(id.String())
+	return prefix + strings.ToLower(id.String()), nil
 }

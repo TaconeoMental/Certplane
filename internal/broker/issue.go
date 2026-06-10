@@ -20,8 +20,13 @@ const maxIssueRequestBodyBytes = 64 * 1024
 
 func (s *Server) issueCertificate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	requestID, err := audit.NewID("req_")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
 	reqCtx := &certificateRequestContext{
-		RequestID: audit.NewID("req_"),
+		RequestID: requestID,
 		Request:   r,
 	}
 

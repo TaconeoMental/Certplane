@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -23,8 +24,9 @@ type auditEventBase struct {
 }
 
 func newAuditEvent(base auditEventBase) audit.Event {
+	eventID, _ := audit.NewID("evt_")
 	event := audit.Event{
-		EventID:     audit.NewID("evt_"),
+		EventID:     eventID,
 		RequestID:   base.RequestID,
 		Timestamp:   time.Now().UTC(),
 		Type:        base.Type,
@@ -126,10 +128,18 @@ func (s *Server) auditBarrier(ctx context.Context, event audit.Event) error {
 
 func normalizeAuditEvent(event audit.Event) audit.Event {
 	if event.EventID == "" {
-		event.EventID = audit.NewID("evt_")
+		id, err := audit.NewID("evt_")
+		if err != nil {
+			slog.Warn("audit event ID generation failed", "error", err)
+		}
+		event.EventID = id
 	}
 	if event.RequestID == "" {
-		event.RequestID = audit.NewID("req_")
+		id, err := audit.NewID("req_")
+		if err != nil {
+			slog.Warn("audit request ID generation failed", "error", err)
+		}
+		event.RequestID = id
 	}
 	if event.Timestamp.IsZero() {
 		event.Timestamp = time.Now().UTC()
